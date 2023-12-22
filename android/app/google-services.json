@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "316908780822",
+    "project_id": "taskmate-b7c44",
+    "storage_bucket": "taskmate-b7c44.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316908780822:android:bd9f3cc29004fac2bf2437",
+        "android_client_info": {
+          "package_name": "com.example.task_mate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "316908780822-c1rq7n8ec9qh0jlrkemvn7kskvnjka75.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0iTvoNDyrtoRjY9DCfxV4J-izLRQ5Vlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "316908780822-c1rq7n8ec9qh0jlrkemvn7kskvnjka75.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "316908780822-echf17vml5ufeabrlnovqdnin3khp2lp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.taskmate.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316908780822:android:668291b0e14f6010bf2437",
+        "android_client_info": {
+          "package_name": "com.tm.taskmate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "316908780822-88ncek0s0aq2hdsqu2cs1kc5vsd4e4d3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tm.taskmate",
+            "certificate_hash": "dd921de8acfde75782ce0be0f5af979a16e48909"
+          }
+        },
+        {
+          "client_id": "316908780822-c1rq7n8ec9qh0jlrkemvn7kskvnjka75.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0iTvoNDyrtoRjY9DCfxV4J-izLRQ5Vlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "316908780822-c1rq7n8ec9qh0jlrkemvn7kskvnjka75.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "316908780822-echf17vml5ufeabrlnovqdnin3khp2lp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.taskmate.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
