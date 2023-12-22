@@ -6,26 +6,33 @@ import 'package:task_mate/core/utils/extensions.dart';
 
 import '../../auth/controller/auth_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
+  void signInWithGoogle(BuildContext context, WidgetRef ref) async {
+    ref.read(authControllerProvider.notifier).signInWithGoogle(context);
+  }
 
-class _SplashScreenState extends State<SplashScreen> {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: AnimatedSplashScreen(
-        splash: SizedBox(
-          height: 20.0.widthPercent,
-          width: 20.0.widthPercent,
-          child: LottieBuilder.asset(
-            'assets/images/page2.json',
-          ),
+        splash: Column(
+          children: [
+            // SizedBox(
+            //   // height: 20.0.widthPercent,
+            //   width: 20.0.widthPercent,
+            //   child: LottieBuilder.asset(
+            //     'assets/images/page2.json',
+            //   ),
+            // ),
+            ElevatedButton(
+              onPressed: () => signInWithGoogle(context, ref),
+              child: const Text('Sign in with Google'),
+            ),
+          ],
         ),
-        nextScreen: const NextScreen(),
+        nextScreen: const Scaffold(),
         splashTransition: SplashTransition.fadeTransition,
         backgroundColor: Colors.deepPurple,
       ),

@@ -28,6 +28,18 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
+	<key>GIDClientID</key>
+	<string>316908780822-s5hdki6vqqhfjtb2llitusp0emdlider.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+  	<dict>
+    	<key>CFBundleURLSchemes</key>
+    	<array>
+      		<string>com.googleusercontent.apps.316908780822-s5hdki6vqqhfjtb2llitusp0emdlider</string>
+    	</array>
+  	</dict>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
