@@ -1,3 +1,7 @@
+import '../report/screens/show_report.dart';
+import '../task/screen/add_task.dart';
+import '../task/screen/show_all_task.dart';
+
 class Constants {
   Constants._privateConstructor();
 
@@ -13,11 +17,11 @@ class Constants {
   static const tasksCollection = 'tasks';
   static const commentsCollection = 'comments';
 
-  // static const tabWidgets = [
-  //   ShowAllTask(),
-  //   AddTask(),
-  //   ShowReport(),
-  // ];
+  static const tabWidgets = [
+    ShowAllTask(),
+    AddTask(),
+    ShowReport(),
+  ];
 
   // Repositories constants
   static const bannerDefault =
@@ -42,7 +46,8 @@ class Constants {
   static const String mailScheme = 'mailto';
   static const String mailSubject = 'Help in Task Mate App';
   static const String mailError = 'Error';
-  static const String mailErrorContent = 'Could not open Gmail app.';
+  static const String mailErrorContent =
+      'Could not open Gmail app. Make sure you have Gmail app installed.';
   static const String upgradeToPremium = 'Upgrade to Premium';
   static const String help = 'Help';
   static const String settings = 'Settings';

@@ -56,14 +56,16 @@ class ThemeNotifier extends StateNotifier<ThemeData> {
 
   ThemeNotifier({ThemeMode mode = ThemeMode.dark})
       : _mode = mode,
-        super(Pallete.darkModeAppTheme) {
-  }
+        super(Pallete.darkModeAppTheme) {}
 
   ThemeMode get mode => _mode;
 
   bool get isDark => _mode == ThemeMode.dark;
 
-
-
- 
+  void toggleTheme() {
+    _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    state = _mode == ThemeMode.dark
+        ? Pallete.darkModeAppTheme
+        : Pallete.lightModeAppTheme;
+  }
 }
