@@ -2,10 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:routemaster/routemaster.dart';
 
 import '../../auth/controller/auth_controller.dart';
 import '../../common/constants.dart';
+import '../../provider/failure.dart';
 import '../../task/controller/task_controller.dart';
 import '../../theme/pallete.dart';
 
@@ -54,15 +56,17 @@ class _HomeState extends ConsumerState<Home> {
     if (usersData != null) {
       // save the number of task in the notificationCount variable
       notificationCount = usersData.length;
-      print(notificationCount);
+
       // List<String> taskTitles = usersData.map((task) => task.title).toList();
 
       // tasks = taskTitles;
     } else {
       // Handle loading or error state here if necessary
-      if (kDebugMode) {
-        print('Loading or Error State');
-      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: Failure('Error fetching tasks'),
+        stack: null,
+        library: 'task_repository.dart',
+      ));
     }
 
     return MaterialApp(

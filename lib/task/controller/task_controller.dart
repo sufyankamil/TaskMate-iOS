@@ -146,6 +146,7 @@ class TaskController extends StateNotifier<bool> {
     try {
       // Create a new Todo object with the provided title
       Todo newSubTask = Todo(
+        id: const Uuid().v1(),
         title: subTaskTitle,
         isDone: false,
       );
@@ -213,6 +214,17 @@ class TaskController extends StateNotifier<bool> {
       (_) => Fluttertoast.showToast(msg: 'Task Deleted Successfully'),
     );
   }
+
+Future<void> deleteSubtaskById(String taskId, String subtaskId) async {
+    final result = await _taskRepository.deleteSubtaskById(taskId, subtaskId);
+
+    result.fold(
+      (failure) => Fluttertoast.showToast(msg: failure.message),
+      (_) => Fluttertoast.showToast(msg: 'Sub Task Deleted Successfully'),
+    );
+  }
+
+
 
   @override
   void dispose() {

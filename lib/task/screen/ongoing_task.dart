@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:grouped_list/grouped_list.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/task/screen/completed_task.dart';
 
@@ -24,17 +27,70 @@ class OnGoingTask extends ConsumerStatefulWidget {
 class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
-
-    bool isDarkTheme = themeNotifier.isDark;
-
-    return _buildTaskList(ref);
+    return SingleChildScrollView(child: _buildTaskList(ref));
   }
 
   Widget _buildTaskList(WidgetRef ref) {
+    return ref.watch(taskByIdProvider(widget.taskId)).when(
+          data: (task) {
+            return Column(
+              children: [
+                _buildTaskHeader(ref, task),
+                _buildTaskBody(ref, task),
+              ],
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator.adaptive(),
+          ),
+          error: (error, stack) => Center(
+            child: Text(error.toString()),
+          ),
+        );
+  }
+
+  Widget emptyTask() {
+    const SizedBox(height: 20.0);
+    return Column(
+      children: [
+        const SizedBox(height: 20.0),
+        Theme.of(context).platform == TargetPlatform.android
+            ? Column(
+                children: [
+                  Lottie.asset(
+                    'assets/images/task_animation.json',
+                    height: 65.0.textPercentage,
+                  ),
+                  Text(
+                    'Start adding task by clicking + ' 'button below',
+                    style: TextStyle(
+                      fontSize: 13.0.textPercentage,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Start adding task by clicking + ' 'button below',
+                    style: TextStyle(
+                      fontSize: 13.0.textPercentage,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+      ],
+    );
+  }
+
+  Widget _buildTaskHeader(WidgetRef ref, Tasks task) {
     final themeNotifier = ref.watch(themeNotifierProvider.notifier);
 
     bool isDarkTheme = themeNotifier.isDark;
+
     int todosLength = 0;
 
     List<String> todoTitles = [];
@@ -43,7 +99,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
 
     final taskController = ref.watch(taskControllerProvider.notifier);
 
-    final task = ref.watch(taskByIdProvider(widget.taskId));
+    final task = ref.read(taskByIdProvider(widget.taskId));
 
     // Check if the task is available
     if (task is AsyncData<Tasks>) {
@@ -62,7 +118,9 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
 
     List<String> tasks = [];
 
-    final usersTask = ref.watch(userTaskProvider);
+    Key uniqueKey = Key('unique_slidable_key_0'); // Initial value
+
+    final usersTask = ref.read(userTaskProvider);
 
     final usersData = usersTask.when(
       data: (data) => data,
@@ -72,137 +130,209 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           null, // Return null for error state or handle it as needed
     );
 
-    if (usersData != null) {
-      // Fetch the dates when task was created
-      for (var task in usersData) {
-        tasks.add(DateFormat('dd-MM-yyyy').format(task.createdAt));
-      }
-
-      // Sort the dates in descending order
-      tasks.sort((a, b) => b.compareTo(a));
-
-      // Store the latest date
-      String latestDate = tasks.first;
-
-      // Get the index of the latest date
-      int latestDateIndex = tasks.indexOf(latestDate);
-
-      // Get the latest task
-      Tasks latestTask = usersData[latestDateIndex];
-    } else {
-      // Handle loading or error state here if necessary
-      if (kDebugMode) {
-        print('Loading or Error State');
-      }
+    void navigateToCompletedTask(BuildContext context, String taskId) {
+      Routemaster.of(context).push('/completed-task/$taskId');
     }
+
+    void doNothing(BuildContext context) {}
 
     if (todoTitles.isNotEmpty) {
-      const SizedBox(height: 10.0);
-      return ListView(
-        shrinkWrap: true,
-        physics: const ClampingScrollPhysics(),
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 9.0.widthPercent,
-              vertical: 3.0.widthPercent,
-            ),
-            child: Text(
-              'In Progress ($todosLength)',
-              style: TextStyle(
-                fontSize: 16.0.textPercentage,
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5.0.widthPercent),
-            child: const Divider(thickness: 2),
-          ),
-          const SizedBox(height: 10.0),
-          for (String title in todoTitles)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 9.0.widthPercent,
-                vertical: 3.0.widthPercent,
-              ),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: Checkbox.adaptive(
-                      value: todoIsDoneStatus[todoTitles.indexOf(title)],
-                      onChanged: (value) {
-                        if (kDebugMode) {
-                          print("value: $value");
-                        }
-                        Tasks? tasks = task.value;
-
-                        Todo todo = tasks!.todos[todoTitles.indexOf(title)];
-
-                        if (kDebugMode) {
-                          print("Before update - isDone: ${todo.isDone}");
-                        }
-
-                        taskController.updateTodoIsDone(tasks, todo, value!);
-
-                        if (kDebugMode) {
-                          print("After update - isDone: ${todo.isDone}");
-                        }
-
-                        if (value) {
-                          try {
-                            taskController.updateKarma(tasks);
-                          } catch (e) {
-                            Fluttertoast.showToast(msg: e.toString());
-                          }
-                        }
-
-                        setState(() {});
-                      },
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        height: MediaQuery.of(context).size.height * 0.5,
+        width: MediaQuery.of(context).size.width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 5.0.widthPercent,
+                    vertical: 3.0.widthPercent,
+                  ),
+                  child: Text(
+                    'In Progress ($todosLength)',
+                    style: TextStyle(
+                      fontSize: 16.0.textPercentage,
+                    ),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 5.0.widthPercent,
+                    vertical: 3.0.widthPercent,
+                  ),
+                  child: TextButton(
+                    onPressed: () {
+                      navigateToCompletedTask(context, widget.taskId);
+                      taskController.changeChipIndex(1);
+                      setState(() {});
+                    },
+                    child: Text(
+                      'Completed Task',
+                      style: TextStyle(
+                        fontSize: 12.0.textPercentage,
+                        color: Colors.green,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 12.0.textPercentage,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
+                ),
+              ],
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 1.0.widthPercent),
+              child: const Divider(thickness: 2),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: todoTitles.length,
+                itemBuilder: (context, index) {
+                  Tasks? tasks = task.value;
+                  List<Todo> todos = tasks?.todos ?? [];
+                  return Builder(builder: (BuildContext builderContext) {
+                    return Slidable(
+                      key: Key('unique_slidable_key_$index'),
+                      startActionPane: ActionPane(
+                        motion: const ScrollMotion(),
+                        dismissible: DismissiblePane(onDismissed: () {
+                          taskController.deleteSubtaskById(
+                              widget.taskId, todos[index].id);
+                          setState(() {
+                            todos.removeAt(index);
+                          });
+                        }),
+                        children: [
+                          SlidableAction(
+                            onPressed: (context) {
+                              taskController.deleteSubtaskById(
+                                  widget.taskId, todos[index].id);
+                            },
+                            backgroundColor: const Color(0xFFFE4A49),
+                            foregroundColor: Colors.white,
+                            icon: Icons.delete,
+                            label: 'Delete',
+                          ),
+                          SlidableAction(
+                            onPressed: doNothing,
+                            backgroundColor: const Color(0xFF21B7CA),
+                            foregroundColor: Colors.white,
+                            icon: Icons.share,
+                            label: 'Share',
+                          ),
+                        ],
+                      ),
+                      endActionPane: ActionPane(
+                        motion: const ScrollMotion(),
+                        children: [
+                          SlidableAction(
+                            flex: 2,
+                            onPressed: (context) {
+                              if (todos.isNotEmpty) {
+                                Todo todo = todos[
+                                    todoTitles.indexOf(todoTitles[index])];
+
+                                if (todo.isDone) {
+                                  // If the task is completed, unmark it
+                                  if (kDebugMode) {
+                                    print(
+                                        "Before update - isDone: ${todo.isDone}");
+                                  }
+                                  taskController.updateTodoIsDone(
+                                      tasks!, todo, false);
+                                } else {
+                                  if (kDebugMode) {
+                                    print(
+                                        "After update - isDone: ${todo.isDone}");
+                                  }
+
+                                  // Mark the task as done
+                                  taskController.updateTodoIsDone(
+                                      tasks!, todo, true);
+                                }
+
+                                try {
+                                  taskController.updateKarma(tasks);
+                                } catch (e) {
+                                  Fluttertoast.showToast(msg: e.toString());
+                                }
+
+                                Fluttertoast.showToast(
+                                    msg: 'Task Updated Successfully');
+                                setState(() {});
+                              }
+                            },
+                            backgroundColor: todos[index].isDone
+                                ? const Color(0xFFFE4A49)
+                                : const Color(0xFF7BC043),
+                            foregroundColor: Colors.white,
+                            icon:
+                                todos[index].isDone ? Icons.undo : Icons.check,
+                            label: todos[index].isDone
+                                ? 'Undo'
+                                : 'Mark as Completed',
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: 8.0,
+                            right: 8.0,
+                            top: 8.0,
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${todoTitles.indexOf(todoTitles[index]) + 1}.',
+                                style: TextStyle(
+                                  fontSize: 12.0.textPercentage,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Expanded(
+                                child: ListTile(
+                                  title: Text(todoTitles[index]),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    );
+                  });
+                },
               ),
             ),
-          const SizedBox(height: 10.0),
-          CompletedTask(taskId: widget.taskId),
-        ],
-      );
-    } else {
-      const SizedBox(height: 20.0);
-      return Column(
-        children: [
-          const SizedBox(height: 20.0),
-          Lottie.asset(
-            'assets/images/task_animation.json',
-            height: 65.0.textPercentage,
-          ),
-          Text(
-            'Start adding task by clicking + ' 'button below',
-            style: TextStyle(
-              fontSize: 13.0.textPercentage,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+          ],
+        ),
       );
     }
+    return emptyTask();
+  }
+
+  _buildTaskBody(WidgetRef ref, Tasks task) {
+    return Column(
+      children: [
+        const SizedBox(height: 20.0),
+        Text(
+          'Soon you will be able to add subtasks here',
+          style: TextStyle(
+            fontSize: 12.0.textPercentage,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
   }
 }

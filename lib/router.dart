@@ -7,6 +7,7 @@ import 'report/screens/show_report.dart';
 import 'splash/screens/splash_screen.dart';
 import 'task/screen/add_sub_task.dart';
 import 'task/screen/add_task.dart';
+import 'task/screen/completed_task.dart';
 import 'task/screen/detailed_task.dart';
 
 final loggedInRoute = RouteMap(
@@ -30,6 +31,11 @@ final loggedInRoute = RouteMap(
         ),
     '/sub-task/:taskId': (route) => MaterialPage(
           child: SubTask(
+            taskId: route.pathParameters['taskId']!,
+          ),
+        ),
+    '/completed-task/:taskId': (route) => MaterialPage(
+          child: CompletedTask(
             taskId: route.pathParameters['taskId']!,
           ),
         ),

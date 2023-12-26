@@ -8,7 +8,6 @@ import 'package:task_mate/core/utils/extensions.dart';
 import '../../model/task_model.dart';
 import '../../theme/pallete.dart';
 
-
 class ShowTasks extends ConsumerWidget {
   final Tasks tasks;
 
@@ -99,53 +98,55 @@ class ShowTasks extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.all(2.0.widthPercent),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Icon(
-                        IconData(
-                          Icons.nature_people.codePoint,
-                          fontFamily: Icons.nature_people.fontFamily,
-                          fontPackage: Icons.nature_people.fontPackage,
+                Theme.of(context).platform == TargetPlatform.android
+                    ? Padding(
+                        padding: EdgeInsets.all(2.0.widthPercent),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(
+                              IconData(
+                                Icons.nature_people.codePoint,
+                                fontFamily: Icons.nature_people.fontFamily,
+                                fontPackage: Icons.nature_people.fontPackage,
+                              ),
+                              color: color,
+                            ),
+                            PopupMenuButton<String>(
+                              icon: Icon(
+                                Icons.more_vert,
+                                color: isDarkTheme
+                                    ? currentTheme.primaryColorLight
+                                    : currentTheme.primaryColorDark,
+                              ),
+                              onSelected: (value) {
+                                if (value == 'open') {
+                                  // Handle delete task
+                                } else if (value == 'edit') {
+                                  // Handle edit task
+                                } else if (value == 'delete') {
+                                  // Handle open task
+                                }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem<String>(
+                                  value: 'open',
+                                  child: Text('Open Task'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'edit',
+                                  child: Text('Edit Task'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Text('Delete Task'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        color: color,
-                      ),
-                      PopupMenuButton<String>(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: isDarkTheme
-                              ? currentTheme.primaryColorLight
-                              : currentTheme.primaryColorDark,
-                        ),
-                        onSelected: (value) {
-                          if (value == 'open') {
-                            // Handle delete task
-                          } else if (value == 'edit') {
-                            // Handle edit task
-                          } else if (value == 'delete') {
-                            // Handle open task
-                          }
-                        },
-                        itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem<String>(
-                            value: 'open',
-                            child: Text('Open Task'),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Text('Edit Task'),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Text('Delete Task'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                      )
+                    : const SizedBox(),
                 const SizedBox(height: 5),
                 SingleChildScrollView(
                   child: Column(
@@ -184,38 +185,40 @@ class ShowTasks extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 5),
-                      tasks.createdAt.toLocal().isAfter(
-                              DateTime.now().subtract(const Duration(days: 1)))
-                          ? Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 4.0.widthPercent,),
-                              child: Text(
-                                "Task created yesterday",
-                                style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkTheme
-                                      ? currentTheme.primaryColorLight
-                                      : currentTheme.primaryColorDark,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            )
-                          : Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 4.0.widthPercent),
-                              child: Text(
-                                'Created on: ${DateFormat('dd-MM-yyyy').format(tasks.createdAt.toLocal())}',
-                                style: TextStyle(
-                                  fontSize: 12.0,
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkTheme
-                                      ? currentTheme.primaryColorLight
-                                      : currentTheme.primaryColorDark,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            ),
+                      // tasks.createdAt.toLocal().isAfter(
+                      //         DateTime.now().subtract(const Duration(days: 1)))
+                      //     ? Padding(
+                      //         padding: EdgeInsets.symmetric(
+                      //           horizontal: 4.0.widthPercent,
+                      //         ),
+                      //         child: Text(
+                      //           "Task created yesterday",
+                      //           style: TextStyle(
+                      //             fontSize: 12.0,
+                      //             fontWeight: FontWeight.normal,
+                      //             color: isDarkTheme
+                      //                 ? currentTheme.primaryColorLight
+                      //                 : currentTheme.primaryColorDark,
+                      //             decoration: TextDecoration.none,
+                      //           ),
+                      //         ),
+                      //       )
+                      //     :
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+                        child: Text(
+                          'Created on: ${DateFormat('dd-MM-yyyy').format(tasks.createdAt.toLocal())}',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.normal,
+                            color: isDarkTheme
+                                ? currentTheme.primaryColorLight
+                                : currentTheme.primaryColorDark,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
 
                       const SizedBox(height: 5),
                       // show time

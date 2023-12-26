@@ -114,100 +114,41 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task Detail'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              // final userDataList = usersData.toList();
+
+              if (kDebugMode) {
+                print("userDataList: ");
+              }
+            },
+            icon: const Tooltip(
+              waitDuration: Duration(seconds: 100),
+              message: 'Swipe on the task to see list of options',
+              child: Icon(Icons.help_outline),
+            ),
+          ),
+        ],
       ),
-      body: ref.watch(taskByIdProvider(widget.taskId)).when(
-            data: (data) => Column(
-              children: [
-                Expanded(
-                  child: Form(
+
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            ref.watch(taskByIdProvider(widget.taskId)).when(
+                  data: (data) => Form(
                     key: formKeys,
                     child: SizedBox(
-                      height: MediaQuery.of(context).size.height,
+                      height: 40.0.widthPercent,
+                      // height: MediaQuery.of(context).size.height,
                       width: double.infinity,
                       child: ListView(
                         children: [
                           SizedBox(height: 6.0.widthPercent),
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.0.widthPercent),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.person_remove_alt_1_sharp,
-                                          color: stringToColor(data.color!),
-                                        ),
-                                        SizedBox(width: 5.0.widthPercent),
-                                        Text(data.title,
-                                            style: TextStyle(
-                                              overflow: TextOverflow.clip,
-                                              fontSize: 10.0.textPercentage,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            softWrap: true),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                          taskTitle(stringToColor, data),
                           const SizedBox(height: 16.0),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: 16.0.widthPercent,
-                              right: 16.0.widthPercent,
-                              top: 3.0.widthPercent,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${data.todos.length} Tasks',
-                                  style: TextStyle(
-                                    fontSize: 12.0.textPercentage,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                SizedBox(width: 6.0.widthPercent),
-                                Expanded(
-                                  child: StepProgressIndicator(
-                                    totalSteps: isTodosEmpty(data)
-                                        ? 1
-                                        : data.todos.length,
-                                    currentStep: isTodosEmpty(data)
-                                        ? 0
-                                        : getDoneTodo(data),
-                                    size: 5,
-                                    padding: 0,
-                                    selectedGradientColor: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        stringToColor(data.color!)
-                                            .withOpacity(0.5),
-                                        stringToColor(data.color!),
-                                      ],
-                                    ),
-                                    unselectedGradientColor: LinearGradient(
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                      colors: [
-                                        currentTheme.primaryColorLight,
-                                        currentTheme.primaryColorLight
-                                            .withOpacity(0.5),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          stepper(data, isTodosEmpty, getDoneTodo,
+                              stringToColor, currentTheme),
                           const SizedBox(height: 10.0),
                           Center(
                             child: Text(
@@ -219,21 +160,65 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                               ),
                             ),
                           ),
-                          OnGoingTask(taskId: widget.taskId),
                         ],
                       ),
                     ),
                   ),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  ),
+                  error: (error, stackTrace) => Center(
+                    child: Text(error.toString()),
+                  ),
                 ),
-              ],
-            ),
-            loading: () => const Center(
-              child: CircularProgressIndicator.adaptive(),
-            ),
-            error: (error, stackTrace) => Center(
-              child: Text(error.toString()),
-            ),
-          ),
+            const SizedBox(height: 10.0),
+            OnGoingTask(taskId: widget.taskId),
+          ],
+        ),
+      ),
+
+      // body: ref.watch(taskByIdProvider(widget.taskId)).when(
+      //       data: (data) => SingleChildScrollView(
+      //         child: Column(
+      //           children: [
+      //             Form(
+      //               key: formKeys,
+      //               child: SizedBox(
+      //                 height: MediaQuery.of(context).size.height,
+      //                 width: double.infinity,
+      //                 child: ListView(
+      //                   children: [
+      //                     SizedBox(height: 6.0.widthPercent),
+      //                     taskTitle(stringToColor, data),
+      //                     const SizedBox(height: 16.0),
+      //                     stepper(data, isTodosEmpty, getDoneTodo,
+      //                         stringToColor, currentTheme),
+      //                     const SizedBox(height: 10.0),
+      //                     Center(
+      //                       child: Text(
+      //                         '${taskCompleted(data)}/${data.todos.length} Tasks Completed',
+      //                         style: TextStyle(
+      //                           overflow: TextOverflow.clip,
+      //                           fontSize: 12.0.textPercentage,
+      //                           color: Colors.grey,
+      //                         ),
+      //                       ),
+      //                     ),
+      //                     OnGoingTask(taskId: widget.taskId),
+      //                   ],
+      //                 ),
+      //               ),
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //       loading: () => const Center(
+      //         child: CircularProgressIndicator.adaptive(),
+      //       ),
+      //       error: (error, stackTrace) => Center(
+      //         child: Text(error.toString()),
+      //       ),
+      //     ),
       floatingActionButton: isUserDataEmpty
           ? FloatingActionButton(
               onPressed: () {
@@ -250,6 +235,91 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
               child: const Icon(Icons.add),
             )
           : const SizedBox(),
+    );
+  }
+
+  Padding stepper(
+      Tasks data,
+      bool Function(Tasks tasks) isTodosEmpty,
+      int Function(Tasks task) getDoneTodo,
+      Color Function(String colorString) stringToColor,
+      ThemeData currentTheme) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16.0.widthPercent,
+        right: 16.0.widthPercent,
+        top: 3.0.widthPercent,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '${data.todos.length} Tasks',
+            style: TextStyle(
+              fontSize: 12.0.textPercentage,
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(width: 6.0.widthPercent),
+          Expanded(
+            child: StepProgressIndicator(
+              totalSteps: isTodosEmpty(data) ? 1 : data.todos.length,
+              currentStep: isTodosEmpty(data) ? 0 : getDoneTodo(data),
+              size: 5,
+              padding: 0,
+              selectedGradientColor: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  stringToColor(data.color!).withOpacity(0.5),
+                  stringToColor(data.color!),
+                ],
+              ),
+              unselectedGradientColor: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  currentTheme.primaryColorLight,
+                  currentTheme.primaryColorLight.withOpacity(0.5),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding taskTitle(
+      Color Function(String colorString) stringToColor, Tasks data) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.0.widthPercent),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.person_remove_alt_1_sharp,
+                    color: stringToColor(data.color!),
+                  ),
+                  SizedBox(width: 5.0.widthPercent),
+                  Text(data.title,
+                      style: TextStyle(
+                        overflow: TextOverflow.clip,
+                        fontSize: 10.0.textPercentage,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      softWrap: true),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
-
+import 'package:cupertino_modal_sheet/cupertino_modal_sheet.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:routemaster/routemaster.dart';
@@ -126,6 +127,33 @@ class _AddTaskState extends ConsumerState<AddTask> {
     );
   }
 
+  Future<void> showAddTaskSheet(BuildContext context) async {
+    showCupertinoModalSheet(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text('Add Task Category'),
+          message: const Text('Enter the task category name'),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                // Your existing logic for confirming the task
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> showAddTaskDialog(BuildContext context) async {
     await showDialog(
       context: context,
@@ -172,8 +200,7 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
               child: Column(
                 children: [
                   buildTitleTextField(),
-                  const SizedBox(height: 5),
-                  // buildIconChips(),
+
                   const SizedBox(height: 10),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 3.0.widthPercent),
@@ -209,6 +236,73 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
     );
   }
 
+  void showAddTaskSheet(BuildContext context) {
+    showCupertinoModalSheet(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text('Add Task Category'),
+          message: const Text('Enter the task category name'),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Future.delayed(Duration.zero, () {
+                  if (formKeys.currentState!.validate()) {
+                    formKeys.currentState!.save();
+                    ref.read(postControllerProvider.notifier).addTask(
+                          context: context,
+                          title: titleController.text.trim(),
+                        );
+                  }
+                });
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+        );
+      },
+    );
+  }
+
+  void buildTextFieldSheet(BuildContext context) {
+    showCupertinoModalSheet(
+        context: context,
+        builder: (context) {
+          return CupertinoActionSheet(
+            title: const Text('Add Task Category'),
+            message: const Text('Enter the task category name'),
+            actions: [
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Future.delayed(Duration.zero, () {
+                    if (formKeys.currentState!.validate()) {
+                      formKeys.currentState!.save();
+                      ref.read(postControllerProvider.notifier).addTask(
+                            context: context,
+                            title: titleController.text.trim(),
+                          );
+                    }
+                  });
+                },
+                child: const Text('Confirm'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+          );
+        });
+  }
+
   Widget buildTitleTextField() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 3.0.widthPercent),
@@ -234,6 +328,4 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
       ),
     );
   }
-
-
 }
