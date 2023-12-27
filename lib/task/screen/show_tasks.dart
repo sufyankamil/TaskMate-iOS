@@ -152,6 +152,7 @@ class ShowTasks extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 7),
                       Padding(
                         padding:
                             EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
@@ -185,25 +186,7 @@ class ShowTasks extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 5),
-                      // tasks.createdAt.toLocal().isAfter(
-                      //         DateTime.now().subtract(const Duration(days: 1)))
-                      //     ? Padding(
-                      //         padding: EdgeInsets.symmetric(
-                      //           horizontal: 4.0.widthPercent,
-                      //         ),
-                      //         child: Text(
-                      //           "Task created yesterday",
-                      //           style: TextStyle(
-                      //             fontSize: 12.0,
-                      //             fontWeight: FontWeight.normal,
-                      //             color: isDarkTheme
-                      //                 ? currentTheme.primaryColorLight
-                      //                 : currentTheme.primaryColorDark,
-                      //             decoration: TextDecoration.none,
-                      //           ),
-                      //         ),
-                      //       )
-                      //     :
+
                       Padding(
                         padding:
                             EdgeInsets.symmetric(horizontal: 4.0.widthPercent),

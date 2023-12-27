@@ -1,13 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fpdart/fpdart.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
 
 import '../../auth/controller/auth_controller.dart';
 import '../../common/constants.dart';
-import '../../provider/failure.dart';
 import '../../task/controller/task_controller.dart';
 import '../../theme/pallete.dart';
 
@@ -56,17 +54,8 @@ class _HomeState extends ConsumerState<Home> {
     if (usersData != null) {
       // save the number of task in the notificationCount variable
       notificationCount = usersData.length;
-
-      // List<String> taskTitles = usersData.map((task) => task.title).toList();
-
-      // tasks = taskTitles;
     } else {
-      // Handle loading or error state here if necessary
-      FlutterError.reportError(FlutterErrorDetails(
-        exception: Failure('Error fetching tasks'),
-        stack: null,
-        library: 'task_repository.dart',
-      ));
+      notificationCount = 0;
     }
 
     return MaterialApp(
@@ -74,8 +63,9 @@ class _HomeState extends ConsumerState<Home> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
+          centerTitle: false,
           title: const Text(
-            'TaskMate',
+            'Task Hub',
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
@@ -88,7 +78,15 @@ class _HomeState extends ConsumerState<Home> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      notifications(context);
+                      Fluttertoast.showToast(
+                          msg: "Feature coming soon",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          timeInSecForIosWeb: 1,
+                          backgroundColor: Colors.amber,
+                          textColor: Colors.white,
+                          fontSize: 16.0);
+                      // notifications(context);
                     },
                     icon: Stack(
                       children: [
@@ -112,7 +110,7 @@ class _HomeState extends ConsumerState<Home> {
                                 '$notificationCount',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 8,
+                                  fontSize: 10,
                                 ),
                                 textAlign: TextAlign.center,
                               ),

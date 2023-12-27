@@ -131,7 +131,6 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -176,49 +175,6 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
           ],
         ),
       ),
-
-      // body: ref.watch(taskByIdProvider(widget.taskId)).when(
-      //       data: (data) => SingleChildScrollView(
-      //         child: Column(
-      //           children: [
-      //             Form(
-      //               key: formKeys,
-      //               child: SizedBox(
-      //                 height: MediaQuery.of(context).size.height,
-      //                 width: double.infinity,
-      //                 child: ListView(
-      //                   children: [
-      //                     SizedBox(height: 6.0.widthPercent),
-      //                     taskTitle(stringToColor, data),
-      //                     const SizedBox(height: 16.0),
-      //                     stepper(data, isTodosEmpty, getDoneTodo,
-      //                         stringToColor, currentTheme),
-      //                     const SizedBox(height: 10.0),
-      //                     Center(
-      //                       child: Text(
-      //                         '${taskCompleted(data)}/${data.todos.length} Tasks Completed',
-      //                         style: TextStyle(
-      //                           overflow: TextOverflow.clip,
-      //                           fontSize: 12.0.textPercentage,
-      //                           color: Colors.grey,
-      //                         ),
-      //                       ),
-      //                     ),
-      //                     OnGoingTask(taskId: widget.taskId),
-      //                   ],
-      //                 ),
-      //               ),
-      //             ),
-      //           ],
-      //         ),
-      //       ),
-      //       loading: () => const Center(
-      //         child: CircularProgressIndicator.adaptive(),
-      //       ),
-      //       error: (error, stackTrace) => Center(
-      //         child: Text(error.toString()),
-      //       ),
-      //     ),
       floatingActionButton: isUserDataEmpty
           ? FloatingActionButton(
               onPressed: () {

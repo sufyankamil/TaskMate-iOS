@@ -58,21 +58,6 @@ class _AddTaskState extends ConsumerState<AddTask> {
                 12.0.widthPercent) /
             2;
 
-    final usersTask = ref.watch(userTaskProvider);
-
-    final usersData = usersTask.when(
-      data: (data) => data,
-      loading: () => const Center(
-        child: CircularProgressIndicator.adaptive(),
-      ),
-      error: (e, s) => const Center(
-        child: Text('Error'),
-      ),
-    );
-
-    // Check if usersData is empty
-    final bool isUserDataEmpty = usersData is Iterable && usersData.isNotEmpty;
-
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +185,6 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
               child: Column(
                 children: [
                   buildTitleTextField(),
-
                   const SizedBox(height: 10),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 3.0.widthPercent),

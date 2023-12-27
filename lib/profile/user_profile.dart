@@ -110,7 +110,8 @@ class ProfileDrawer extends ConsumerWidget {
     bool isDark = themeProvider.isDark;
 
     void toggleTheme(WidgetRef ref) {
-      themeProvider.toggleTheme();
+      ref.read(themeNotifierProvider.notifier).toggleTheme();
+     
     }
 
     return Drawer(

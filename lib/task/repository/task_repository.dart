@@ -173,40 +173,6 @@ class TaskRepository {
     }
   }
 
-  Future<void> deleteSubtaskByIdOld(String taskId, String subtaskId) async {
-    try {
-      final docReference =
-          _firestore.collection(Constants.tasksCollection).doc(taskId);
-
-      // Get the current tasks document
-      final tasksDoc = await docReference.get();
-
-      if (tasksDoc.exists) {
-        // Convert the Firestore document data to a map
-        Map<String, dynamic> tasksData =
-            tasksDoc.data() as Map<String, dynamic>;
-
-        // Find the index of the subtask with the given ID in the todos list
-        int subtaskIndex =
-            tasksData['todos'].indexWhere((todo) => todo['id'] == subtaskId);
-
-        if (subtaskIndex != -1) {
-          // Remove the subtask from the todos list
-          tasksData['todos'].removeAt(subtaskIndex);
-
-          // Update Firestore document with the modified todos list
-          await docReference.update({
-            'todos': tasksData['todos'],
-          });
-        }
-      }
-    } on FirebaseException catch (e) {
-      throw e.message!;
-    } catch (e) {
-      throw e.toString();
-    }
-  }
-
   CollectionReference get _task =>
       _firestore.collection(Constants.tasksCollection);
 }

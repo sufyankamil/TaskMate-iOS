@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:routemaster/routemaster.dart';
+import 'package:task_mate/splash/screens/intro_screen_1.dart';
 
 import 'home/screens/homepage.dart';
 import 'profile/user_profile.dart';
@@ -46,7 +47,7 @@ final loggedInRoute = RouteMap(
 final loggedOutRoute = RouteMap(
   routes: {
     '/': (_) => const MaterialPage(
-          child: SplashScreen(),
+          child: IntroScreen1(),
         ),
   },
 );

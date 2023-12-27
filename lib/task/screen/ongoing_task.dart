@@ -3,16 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:grouped_list/grouped_list.dart';
-import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
-import 'package:task_mate/task/screen/completed_task.dart';
 
 import '../../../model/task_model.dart';
 import '../../../model/todo.dart';
-import '../../../theme/pallete.dart';
 import '../controller/task_controller.dart';
 
 class OnGoingTask extends ConsumerStatefulWidget {
@@ -36,7 +32,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
             return Column(
               children: [
                 _buildTaskHeader(ref, task),
-                _buildTaskBody(ref, task),
               ],
             );
           },
@@ -87,10 +82,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
   }
 
   Widget _buildTaskHeader(WidgetRef ref, Tasks task) {
-    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
-
-    bool isDarkTheme = themeNotifier.isDark;
-
     int todosLength = 0;
 
     List<String> todoTitles = [];
@@ -116,19 +107,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       todoIsDoneStatus = tasks.todos.map((todo) => todo.isDone).toList();
     }
 
-    List<String> tasks = [];
-
-    Key uniqueKey = Key('unique_slidable_key_0'); // Initial value
-
-    final usersTask = ref.read(userTaskProvider);
-
-    final usersData = usersTask.when(
-      data: (data) => data,
-      loading: () =>
-          null, // Return null for loading state or handle it as needed
-      error: (e, s) =>
-          null, // Return null for error state or handle it as needed
-    );
+    Key uniqueKey = const Key('unique_slidable_key_0');
 
     void navigateToCompletedTask(BuildContext context, String taskId) {
       Routemaster.of(context).push('/completed-task/$taskId');
@@ -162,163 +141,182 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
                   ),
                 ),
                 const Spacer(),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 5.0.widthPercent,
-                    vertical: 3.0.widthPercent,
-                  ),
-                  child: TextButton(
-                    onPressed: () {
-                      navigateToCompletedTask(context, widget.taskId);
-                      taskController.changeChipIndex(1);
-                      setState(() {});
-                    },
-                    child: Text(
-                      'Completed Task',
-                      style: TextStyle(
-                        fontSize: 12.0.textPercentage,
-                        color: Colors.green,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                    ),
-                  ),
-                ),
+                completedTaskPage(navigateToCompletedTask, taskController),
               ],
             ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 1.0.widthPercent),
               child: const Divider(thickness: 2),
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: todoTitles.length,
-                itemBuilder: (context, index) {
-                  Tasks? tasks = task.value;
-                  List<Todo> todos = tasks?.todos ?? [];
-                  return Builder(builder: (BuildContext builderContext) {
-                    return Slidable(
-                      key: Key('unique_slidable_key_$index'),
-                      startActionPane: ActionPane(
-                        motion: const ScrollMotion(),
-                        dismissible: DismissiblePane(onDismissed: () {
-                          taskController.deleteSubtaskById(
-                              widget.taskId, todos[index].id);
-                          setState(() {
-                            todos.removeAt(index);
-                          });
-                        }),
-                        children: [
-                          SlidableAction(
-                            onPressed: (context) {
-                              taskController.deleteSubtaskById(
-                                  widget.taskId, todos[index].id);
-                            },
-                            backgroundColor: const Color(0xFFFE4A49),
-                            foregroundColor: Colors.white,
-                            icon: Icons.delete,
-                            label: 'Delete',
-                          ),
-                          SlidableAction(
-                            onPressed: doNothing,
-                            backgroundColor: const Color(0xFF21B7CA),
-                            foregroundColor: Colors.white,
-                            icon: Icons.share,
-                            label: 'Share',
-                          ),
-                        ],
-                      ),
-                      endActionPane: ActionPane(
-                        motion: const ScrollMotion(),
-                        children: [
-                          SlidableAction(
-                            flex: 2,
-                            onPressed: (context) {
-                              if (todos.isNotEmpty) {
-                                Todo todo = todos[
-                                    todoTitles.indexOf(todoTitles[index])];
-
-                                if (todo.isDone) {
-                                  // If the task is completed, unmark it
-                                  if (kDebugMode) {
-                                    print(
-                                        "Before update - isDone: ${todo.isDone}");
-                                  }
-                                  taskController.updateTodoIsDone(
-                                      tasks!, todo, false);
-                                } else {
-                                  if (kDebugMode) {
-                                    print(
-                                        "After update - isDone: ${todo.isDone}");
-                                  }
-
-                                  // Mark the task as done
-                                  taskController.updateTodoIsDone(
-                                      tasks!, todo, true);
-                                }
-
-                                try {
-                                  taskController.updateKarma(tasks);
-                                } catch (e) {
-                                  Fluttertoast.showToast(msg: e.toString());
-                                }
-
-                                Fluttertoast.showToast(
-                                    msg: 'Task Updated Successfully');
-                                setState(() {});
-                              }
-                            },
-                            backgroundColor: todos[index].isDone
-                                ? const Color(0xFFFE4A49)
-                                : const Color(0xFF7BC043),
-                            foregroundColor: Colors.white,
-                            icon:
-                                todos[index].isDone ? Icons.undo : Icons.check,
-                            label: todos[index].isDone
-                                ? 'Undo'
-                                : 'Mark as Completed',
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            left: 8.0,
-                            right: 8.0,
-                            top: 8.0,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                '${todoTitles.indexOf(todoTitles[index]) + 1}.',
-                                style: TextStyle(
-                                  fontSize: 12.0.textPercentage,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Expanded(
-                                child: ListTile(
-                                  title: Text(todoTitles[index]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  });
-                },
-              ),
-            ),
+            slidableWidget(todoTitles, task, taskController, doNothing),
           ],
         ),
       );
     }
     return emptyTask();
+  }
+
+  Padding completedTaskPage(
+      void Function(BuildContext context, String taskId)
+          navigateToCompletedTask,
+      TaskController taskController) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 5.0.widthPercent,
+        vertical: 3.0.widthPercent,
+      ),
+      child: TextButton(
+        onPressed: () {
+          navigateToCompletedTask(context, widget.taskId);
+          taskController.changeChipIndex(1);
+          setState(() {});
+        },
+        child: Text(
+          'Completed Task',
+          style: TextStyle(
+            fontSize: 12.0.textPercentage,
+            color: Colors.green,
+          ),
+          overflow: TextOverflow.ellipsis,
+          softWrap: true,
+        ),
+      ),
+    );
+  }
+
+  Expanded slidableWidget(
+      List<String> todoTitles,
+      AsyncValue<Tasks> task,
+      TaskController taskController,
+      void Function(BuildContext context) doNothing) {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: todoTitles.length,
+        itemBuilder: (context, index) {
+          Tasks? tasks = task.value;
+          List<Todo> todos = tasks?.todos ?? [];
+          return Builder(builder: (BuildContext builderContext) {
+            return mainSlider(
+                index, taskController, todos, doNothing, todoTitles, tasks);
+          });
+        },
+      ),
+    );
+  }
+
+  Slidable mainSlider(
+      int index,
+      TaskController taskController,
+      List<Todo> todos,
+      void Function(BuildContext context) doNothing,
+      List<String> todoTitles,
+      Tasks? tasks) {
+    return Slidable(
+      key: Key('unique_slidable_key_$index'),
+      startActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        // dismissible: DismissiblePane(onDismissed: () {
+        // taskController.deleteSubtaskById(widget.taskId, todos[index].id);
+        // setState(() {
+        //   todos.removeAt(index);
+        // });
+        // }),
+        children: [
+          SlidableAction(
+            onPressed: (context) {
+              taskController.deleteSubtaskById(widget.taskId, todos[index].id);
+            },
+            backgroundColor: const Color(0xFFFE4A49),
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
+          ),
+          SlidableAction(
+            onPressed: doNothing,
+            backgroundColor: const Color(0xFF21B7CA),
+            foregroundColor: Colors.white,
+            icon: Icons.share,
+            label: 'Share',
+          ),
+        ],
+      ),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            flex: 2,
+            onPressed: (context) {
+              if (todos.isNotEmpty) {
+                Todo todo = todos[todoTitles.indexOf(todoTitles[index])];
+
+                if (todo.isDone) {
+                  // If the task is completed, unmark it
+                  if (kDebugMode) {
+                    print("Before update - isDone: ${todo.isDone}");
+                  }
+                  taskController.updateTodoIsDone(tasks!, todo, false);
+                } else {
+                  if (kDebugMode) {
+                    print("After update - isDone: ${todo.isDone}");
+                  }
+
+                  // Mark the task as done
+                  taskController.updateTodoIsDone(tasks!, todo, true);
+                }
+
+                try {
+                  taskController.updateKarma(tasks);
+                } catch (e) {
+                  Fluttertoast.showToast(msg: e.toString());
+                }
+
+                Fluttertoast.showToast(msg: 'Task Updated Successfully');
+                setState(() {});
+              }
+            },
+            backgroundColor: todos[index].isDone
+                ? const Color(0xFFFE4A49)
+                : const Color(0xFF7BC043),
+            foregroundColor: Colors.white,
+            icon: todos[index].isDone ? Icons.undo : Icons.check,
+            label: todos[index].isDone ? 'Undo' : 'Mark as Completed',
+          ),
+        ],
+      ),
+      child: listOfSubTask(todoTitles, index),
+    );
+  }
+
+  Container listOfSubTask(List<String> todoTitles, int index) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 8.0,
+          right: 8.0,
+          top: 8.0,
+        ),
+        child: Row(
+          children: [
+            Text(
+              '${todoTitles.indexOf(todoTitles[index]) + 1}.',
+              style: TextStyle(
+                fontSize: 12.0.textPercentage,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+            Expanded(
+              child: ListTile(
+                title: Text(todoTitles[index]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   _buildTaskBody(WidgetRef ref, Tasks task) {

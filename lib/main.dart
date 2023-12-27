@@ -3,11 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/firebase_options.dart';
-import 'package:task_mate/splash/screens/splash_screen.dart';
 
 import 'auth/controller/auth_controller.dart';
 import 'model/user_model.dart';
@@ -62,7 +60,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     return ref.watch(authStateChangesProvider).when(
           data: (data) => MaterialApp.router(
             debugShowCheckedModeBanner: false,
-            title: 'Task Mate',
+            title: 'Task Hub',
             theme: ref.watch(themeNotifierProvider),
             routerDelegate: RoutemasterDelegate(
               routesBuilder: (context) {
