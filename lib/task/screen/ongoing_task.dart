@@ -141,7 +141,10 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
                   ),
                 ),
                 const Spacer(),
-                // completedTaskPage(navigateToCompletedTask, taskController),
+                todoIsDoneStatus
+                        .every((element) => element == true && todosLength > 0)
+                    ? completedTaskPage(navigateToCompletedTask, taskController)
+                    : const SizedBox()
               ],
             ),
             Padding(
@@ -161,21 +164,24 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           navigateToCompletedTask,
       TaskController taskController) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 5.0.widthPercent,
-        vertical: 3.0.widthPercent,
-      ),
-      child: TextButton(
+      padding: EdgeInsets.symmetric(horizontal: 5.0.widthPercent),
+      child: ElevatedButton(
         onPressed: () {
           navigateToCompletedTask(context, widget.taskId);
           taskController.changeChipIndex(1);
           setState(() {});
         },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
         child: Text(
           'Completed Task',
           style: TextStyle(
             fontSize: 10.0.textPercentage,
-            color: Colors.green,
+            color: Colors.white,
           ),
           overflow: TextOverflow.ellipsis,
           softWrap: true,

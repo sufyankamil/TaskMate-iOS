@@ -24,6 +24,24 @@ class ProfileDrawer extends ConsumerWidget {
     Routemaster.of(context).push('/subscribe');
   }
 
+  void futurePremium(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text(Constants.upgradeToPremium),
+          content: const Text('This feature is coming soon!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void showHelp(BuildContext context) async {
     final Uri emailLaunchUri = Uri(
       scheme: Constants.mailScheme,
@@ -110,25 +128,7 @@ class ProfileDrawer extends ConsumerWidget {
     bool isDark = themeProvider.isDark;
 
     void toggleTheme(WidgetRef ref) {
-      ref.read(themeNotifierProvider.notifier).toggleTheme();
-    }
-
-    void futurePremium(WidgetRef ref) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return CupertinoAlertDialog(
-            title: const Text('Coming Soon'),
-            content: const Text('This feature is coming soon! Stay tuned!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      themeProvider.toggleTheme();
     }
 
     return Drawer(
@@ -176,7 +176,6 @@ class ProfileDrawer extends ConsumerWidget {
               const SizedBox(height: 20),
               const Divider(),
               const SizedBox(height: 20),
-              // Premiuim feature will allow user other users to interact with the content(tasks).
               ListTile(
                 leading: const Icon(Icons.subscriptions, color: Colors.red),
                 title: const Text(Constants.upgradeToPremium,
@@ -184,7 +183,7 @@ class ProfileDrawer extends ConsumerWidget {
                       color: Colors.red,
                     )),
                 onTap: () {
-                  futurePremium(ref);
+                  futurePremium(context);
                 },
               ),
               ListTile(
@@ -199,7 +198,6 @@ class ProfileDrawer extends ConsumerWidget {
                   showSuggestionsDialog(context);
                 },
               ),
-
               ListTile(
                 leading: const Icon(Icons.shield_moon_outlined),
                 title: const Text(Constants.switchTheme),
