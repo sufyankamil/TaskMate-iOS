@@ -5,7 +5,6 @@ import 'package:task_mate/splash/screens/intro_screen_1.dart';
 import 'home/screens/homepage.dart';
 import 'profile/user_profile.dart';
 import 'report/screens/show_report.dart';
-import 'splash/screens/splash_screen.dart';
 import 'task/screen/add_sub_task.dart';
 import 'task/screen/add_task.dart';
 import 'task/screen/completed_task.dart';

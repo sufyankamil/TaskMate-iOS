@@ -141,7 +141,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
                   ),
                 ),
                 const Spacer(),
-                completedTaskPage(navigateToCompletedTask, taskController),
+                // completedTaskPage(navigateToCompletedTask, taskController),
               ],
             ),
             Padding(
@@ -174,7 +174,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
         child: Text(
           'Completed Task',
           style: TextStyle(
-            fontSize: 12.0.textPercentage,
+            fontSize: 10.0.textPercentage,
             color: Colors.green,
           ),
           overflow: TextOverflow.ellipsis,

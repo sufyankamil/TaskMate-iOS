@@ -111,7 +111,24 @@ class ProfileDrawer extends ConsumerWidget {
 
     void toggleTheme(WidgetRef ref) {
       ref.read(themeNotifierProvider.notifier).toggleTheme();
-     
+    }
+
+    void futurePremium(WidgetRef ref) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: const Text('Coming Soon'),
+            content: const Text('This feature is coming soon! Stay tuned!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
 
     return Drawer(
@@ -159,13 +176,16 @@ class ProfileDrawer extends ConsumerWidget {
               const SizedBox(height: 20),
               const Divider(),
               const SizedBox(height: 20),
+              // Premiuim feature will allow user other users to interact with the content(tasks).
               ListTile(
-                leading: const Icon(Icons.workspace_premium, color: Colors.red),
+                leading: const Icon(Icons.subscriptions, color: Colors.red),
                 title: const Text(Constants.upgradeToPremium,
                     style: TextStyle(
                       color: Colors.red,
                     )),
-                onTap: () {},
+                onTap: () {
+                  futurePremium(ref);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.person),
@@ -179,11 +199,7 @@ class ProfileDrawer extends ConsumerWidget {
                   showSuggestionsDialog(context);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text(Constants.settings),
-                onTap: () {},
-              ),
+
               ListTile(
                 leading: const Icon(Icons.shield_moon_outlined),
                 title: const Text(Constants.switchTheme),
