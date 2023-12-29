@@ -4,6 +4,8 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/firebase_options.dart';
 
@@ -46,13 +48,38 @@ class MyApp extends ConsumerStatefulWidget {
 class _MyAppState extends ConsumerState<MyApp> {
   UserModel? user;
 
+  // void getData(WidgetRef ref, User data) async {
+  //   user = await ref
+  //       .watch(authControllerProvider.notifier)
+  //       .getUserData(data.uid)
+  //       .first;
+  //   ref.read(userProvider.notifier).update((state) => user);
+  //   setState(() {});
+  // }
+
   void getData(WidgetRef ref, User data) async {
-    user = await ref
-        .watch(authControllerProvider.notifier)
-        .getUserData(data.uid)
-        .first;
-    ref.read(userProvider.notifier).update((state) => user);
-    setState(() {});
+    try {
+      // Fetch user data from Firestore
+      user = await ref
+          .watch(authControllerProvider.notifier)
+          .getUserData(data.uid)
+          .first;
+
+      // Check if user is not null before updating userProvider state
+      if (user != null) {
+        ref.read(userProvider.notifier).update((state) => user);
+        setState(() {});
+      } else {
+        Fluttertoast.showToast(
+          msg: 'User data is null',
+          backgroundColor: Colors.red,
+        );
+        // Handle the case when user data is null, if needed
+      }
+    } catch (error) {
+      // Handle other errors, if needed
+      Fluttertoast.showToast(msg: error.toString());
+    }
   }
 
   @override

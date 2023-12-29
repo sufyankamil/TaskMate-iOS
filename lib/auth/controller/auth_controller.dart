@@ -57,6 +57,24 @@ class AuthController extends StateNotifier<bool> {
     return _authRepository.getUserData(uid);
   }
 
+  Future<void> signInWithApple(BuildContext context) async {
+    state = true;
+    final user = await _authRepository.signInWithApple();
+    state = false;
+    user.fold(
+      (l) => SnackBar(content: Text(l.message)),
+      (user) => _ref.read(userProvider.notifier).update((state) => user),
+    );
+  }
+
+  void isSignedInWithApple(BuildContext context) async {
+    final user = await _authRepository.isSignedInWithApple();
+    user.fold(
+      (l) => SnackBar(content: Text(l.message)),
+      (user) => _ref.read(userProvider.notifier).update((state) => user),
+    );
+  }
+
   void logout() async {
     _authRepository.logout();
   }

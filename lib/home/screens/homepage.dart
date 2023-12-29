@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
 
 import '../../auth/controller/auth_controller.dart';
+import '../../auth/repository/auth_repository.dart';
 import '../../common/constants.dart';
 import '../../task/controller/task_controller.dart';
 import '../../theme/pallete.dart';
@@ -20,8 +21,6 @@ class Home extends ConsumerStatefulWidget {
 class _HomeState extends ConsumerState<Home> {
   int _page = 0;
 
-  int notificationCount = 0;
-
   void onPageChanged(int page) {
     setState(() {
       _page = page;
@@ -30,6 +29,8 @@ class _HomeState extends ConsumerState<Home> {
 
   @override
   Widget build(BuildContext context) {
+    int notificationCount = 0;
+
     final user = ref.watch(userProvider);
 
     final currentTheme = ref.watch(themeNotifierProvider);
@@ -55,14 +56,23 @@ class _HomeState extends ConsumerState<Home> {
     if (usersData != null) {
       // save the number of task in the notificationCount variable
       notificationCount = usersData.length;
-
-      // List<String> taskTitles = usersData.map((task) => task.title).toList();
-
-      // tasks = taskTitles;
     } else {
       // Handle loading or error state here if necessary
       if (kDebugMode) {
         print('Loading or Error State');
+      }
+    }
+
+    Future<void> refreshUserData() async {
+      final authRepository = ref.read(authRepositoryProvider);
+
+      try {
+        ref.refresh(userTaskProvider);
+        await authRepository.refreshUserData((user) {
+          ref.read(userProvider.notifier).update((state) => user);
+        });
+      } catch (e) {
+        Fluttertoast.showToast(msg: e.toString());
       }
     }
 
@@ -80,6 +90,50 @@ class _HomeState extends ConsumerState<Home> {
             ),
           ),
           actions: [
+            /// Refresh button
+            // IconButton(
+            //   onPressed: () async {
+            //     setState(() {
+            //       // Show loader while refreshing
+            //       usersTask.maybeWhen(
+            //         data: (data) {
+            //           // Set notification count to 0 before refreshing
+            //           notificationCount = 0;
+            //         },
+            //         loading: () {},
+            //         orElse: () {
+            //           // Set loading state explicitly
+            //           notificationCount = 0;
+            //         },
+            //       );
+            //     });
+
+            //     try {
+            //       print('Before refreshing data');
+            //       await refreshUserData();
+            //       print('After refreshing data');
+            //     } catch (e) {
+            //       // Handle error
+            //       Fluttertoast.showToast(msg: e.toString());
+            //     }
+            //   },
+            //   icon: Stack(
+            //     children: [
+            //       const Icon(Icons.refresh),
+            //       if (usersTask.maybeWhen(
+            //           loading: () => true, orElse: () => false))
+            //         Positioned.fill(
+            //           child: Container(
+            //             color: Colors.black26,
+            //             child: const Center(
+            //               child: CircularProgressIndicator.adaptive(),
+            //             ),
+            //           ),
+            //         ),
+            //     ],
+            //   ),
+            // ),
+
             // if user is not null, then show logout button else show login button
             if (user != null)
               Row(

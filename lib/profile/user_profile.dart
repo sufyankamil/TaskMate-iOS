@@ -191,11 +191,6 @@ class ProfileDrawer extends ConsumerWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text(Constants.myProfile),
-                onTap: () {},
-              ),
-              ListTile(
                 leading: const Icon(Icons.format_align_center),
                 title: const Text(Constants.suggestions),
                 onTap: () {
@@ -216,7 +211,6 @@ class ProfileDrawer extends ConsumerWidget {
                   showHelp(context);
                 },
               ),
-              
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
