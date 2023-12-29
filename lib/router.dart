@@ -5,6 +5,7 @@ import 'package:task_mate/splash/screens/intro_screen_1.dart';
 import 'home/screens/homepage.dart';
 import 'profile/user_profile.dart';
 import 'report/screens/show_report.dart';
+import 'support/support_chat.dart';
 import 'task/screen/add_sub_task.dart';
 import 'task/screen/add_task.dart';
 import 'task/screen/completed_task.dart';
@@ -38,6 +39,9 @@ final loggedInRoute = RouteMap(
           child: CompletedTask(
             taskId: route.pathParameters['taskId']!,
           ),
+        ),
+    '/support': (route) => const MaterialPage(
+          child: SupportPage(),
         ),
   },
 );

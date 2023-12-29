@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -113,7 +114,43 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       Routemaster.of(context).push('/completed-task/$taskId');
     }
 
-    void doNothing(BuildContext context) {}
+    void doNothing(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: const Text('Premium Feature'),
+            content: const Text(
+                'Once you have the premium version, you can share it with your friends.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    void futurePremium(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: const Text('Premium Feature'),
+            content: const Text(
+                'Once you have the premium version, you can share it with your friends.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
     if (todoTitles.isNotEmpty) {
       return Container(
@@ -127,19 +164,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           children: [
             Row(
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 5.0.widthPercent,
-                    vertical: 3.0.widthPercent,
-                  ),
-                  child: Text(
-                    'In Progress ($todosLength)',
-                    style: TextStyle(
-                      fontSize: 16.0.textPercentage,
-                    ),
-                    textAlign: TextAlign.start,
-                  ),
-                ),
+                inProgressCount(todosLength),
                 const Spacer(),
                 todoIsDoneStatus
                         .every((element) => element == true && todosLength > 0)
@@ -147,16 +172,35 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
                     : const SizedBox()
               ],
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 1.0.widthPercent),
-              child: const Divider(thickness: 2),
-            ),
+            divider(),
             slidableWidget(todoTitles, task, taskController, doNothing),
           ],
         ),
       );
     }
     return emptyTask();
+  }
+
+  Padding divider() {
+    return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 1.0.widthPercent),
+        child: const Divider(thickness: 2));
+  }
+
+  Padding inProgressCount(int todosLength) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 5.0.widthPercent,
+        vertical: 3.0.widthPercent,
+      ),
+      child: Text(
+        'In Progress ($todosLength)',
+        style: TextStyle(
+          fontSize: 16.0.textPercentage,
+        ),
+        textAlign: TextAlign.start,
+      ),
+    );
   }
 
   Padding completedTaskPage(
@@ -214,19 +258,13 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       int index,
       TaskController taskController,
       List<Todo> todos,
-      void Function(BuildContext context) doNothing,
+      void Function(BuildContext context) futurePremium,
       List<String> todoTitles,
       Tasks? tasks) {
     return Slidable(
       key: Key('unique_slidable_key_$index'),
       startActionPane: ActionPane(
         motion: const ScrollMotion(),
-        // dismissible: DismissiblePane(onDismissed: () {
-        // taskController.deleteSubtaskById(widget.taskId, todos[index].id);
-        // setState(() {
-        //   todos.removeAt(index);
-        // });
-        // }),
         children: [
           SlidableAction(
             onPressed: (context) {
@@ -238,7 +276,9 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
             label: 'Delete',
           ),
           SlidableAction(
-            onPressed: doNothing,
+            onPressed: (context) {
+              futurePremium(context);
+            },
             backgroundColor: const Color(0xFF21B7CA),
             foregroundColor: Colors.white,
             icon: Icons.share,
@@ -322,21 +362,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           ],
         ),
       ),
-    );
-  }
-
-  _buildTaskBody(WidgetRef ref, Tasks task) {
-    return Column(
-      children: [
-        const SizedBox(height: 20.0),
-        Text(
-          'Soon you will be able to add subtasks here',
-          style: TextStyle(
-            fontSize: 12.0.textPercentage,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -24,6 +24,10 @@ class ProfileDrawer extends ConsumerWidget {
     Routemaster.of(context).push('/subscribe');
   }
 
+  void pushToAgent(BuildContext context) {
+    Routemaster.of(context).push('/support');
+  }
+
   void futurePremium(BuildContext context) {
     showDialog(
       context: context,
@@ -212,6 +216,7 @@ class ProfileDrawer extends ConsumerWidget {
                   showHelp(context);
                 },
               ),
+              
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
