@@ -11,7 +11,6 @@ import '../../model/user_model.dart';
 import '../../provider/failure.dart';
 import '../../provider/providers.dart';
 import '../../provider/type_defs.dart';
-import '../controller/auth_controller.dart';
 
 // authRepo is a provider that returns an instance of AuthRepository
 final authRepositoryProvider = Provider((ref) => AuthRepository(
@@ -53,11 +52,9 @@ class AuthRepository {
 
       UserModel user;
 
-      if (kDebugMode) {
-        print(userCredential.additionalUserInfo!.isNewUser);
-      }
+      bool userExists = await userExistsInFirestore(userCredential.user!.uid);
 
-      if (userCredential.additionalUserInfo!.isNewUser) {
+      if (userCredential.additionalUserInfo!.isNewUser || userExists) {
         // create user in firestore
         user = UserModel(
           name: userCredential.user!.displayName!,
@@ -66,25 +63,16 @@ class AuthRepository {
           banner: Constants.bannerDefault,
           uid: userCredential.user!.uid,
           lastSeen: DateTime.now().toString(),
-          isAuthenticated: true, // user is not guest
-          // emailVerified: false,
+          isAuthenticated: true,
           karma: 0,
         );
-        if (kDebugMode) {
-          print('new user');
-        }
-        // print(user);
-        await _users.doc(userCredential.user!.uid).set(user.toMap());
       } else {
+        print("user existanve new");
         // get user from firestore
-        if (kDebugMode) {
-          print('user already exists');
-          print(userCredential.user!);
-        }
         user = await getUserData(userCredential.user!.uid).first;
       }
+
       return right(user);
-      // await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       throw e.message!;
     } catch (e) {
@@ -94,6 +82,120 @@ class AuthRepository {
       return left(Failure(e.toString()));
     }
   }
+
+  Future<Either<Failure, UserModel>> signUpWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      UserModel user = UserModel(
+        name: userCredential.user?.displayName ?? 'DefaultName',
+        email: userCredential.user?.email ?? 'DefaultEmail',
+        photoUrl: userCredential.user?.photoURL ?? Constants.avatarDefault,
+        banner: Constants.bannerDefault,
+        uid: userCredential.user?.uid ?? 'DefaultUID',
+        lastSeen: DateTime.now().toString(),
+        isAuthenticated: true,
+        karma: 0,
+      );
+
+      await _users.doc(user.uid).set(user.toMap());
+
+      return right(user);
+    } on FirebaseAuthException catch (e) {
+      return left(Failure(e.message!));
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      return left(Failure(e.toString()));
+    }
+  }
+
+
+  
+
+  Future<bool> userExistsInFirestore(String uid) async {
+    // Check if the user exists in Firestore based on the UID
+    try {
+      DocumentSnapshot userSnapshot = await _users.doc(uid).get();
+      return userSnapshot.exists;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking user existence in Firestore: $e');
+      }
+      return false;
+    }
+  }
+
+  // FutureEither<UserModel> signInWithGoogle() async {
+  //   try {
+  //     UserCredential userCredential;
+
+  //     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+  //     final credential = GoogleAuthProvider.credential(
+  //       accessToken: (await googleUser!.authentication).accessToken,
+  //       idToken: (await googleUser.authentication).idToken,
+  //     );
+
+  //     userCredential = await _auth.signInWithCredential(credential);
+
+  //     UserModel user;
+
+  //     if (kDebugMode) {
+  //       print(userCredential.additionalUserInfo!.isNewUser);
+  //     }
+
+  //     if (userCredential.additionalUserInfo!.isNewUser) {
+  //       // create user in firestore
+  //       user = UserModel(
+  //         name: userCredential.user!.displayName!,
+  //         email: userCredential.user!.email!,
+  //         photoUrl: userCredential.user!.photoURL ?? Constants.avatarDefault,
+  //         banner: Constants.bannerDefault,
+  //         uid: userCredential.user!.uid,
+  //         lastSeen: DateTime.now().toString(),
+  //         isAuthenticated: true, // user is not guest
+  //         // emailVerified: false,
+  //         karma: 0,
+  //       );
+  //       if (kDebugMode) {
+  //         print('new user');
+  //       }
+  //       bool userExists = await userExistsInFirestore(user.uid);
+
+  //       if (!userExists) {
+  //         await _users.doc(user.uid).set(user.toMap());
+  //       }
+  //     } else {
+  //       // get user from firestore
+  //       user = await getUserData(userCredential.user!.uid).first;
+  //     }
+  //     return right(user);
+  //     // await _users.doc(userCredential.user!.uid).set(user.toMap());
+  //     // }
+  //     // else {
+  //     //   // get user from firestore
+  //     //   if (kDebugMode) {
+  //     //     print('user already exists');
+
+  //     //   }
+
+  //     //   user = await getUserData(userCredential.user!.uid).first;
+  //     // }
+  //     return right(user);
+  //     // await _auth.signInWithCredential(credential);
+  //   } on FirebaseAuthException catch (e) {
+  //     throw e.message!;
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print(e.toString());
+  //     }
+  //     return left(Failure(e.toString()));
+  //   }
+  // }
 
   // Stream is used to listen to changes in the user's authentication state (persisted in local storage)
   Stream<UserModel> getUserData(String uid) {
@@ -161,7 +263,7 @@ class AuthRepository {
 
         user = UserModel(
           name: result.familyName ?? '',
-          email: result.email ?? '',
+          email: result.email ?? extractAppleEmail(userCredential),
           photoUrl: Constants.avatarDefault,
           banner: Constants.bannerDefault,
           uid: userCredential.user!.uid,
@@ -238,7 +340,7 @@ class AuthRepository {
     }
   }
 
-     Future<void> refreshUserData(Function(UserModel?) updateUserState) async {
+  Future<void> refreshUserData(Function(UserModel?) updateUserState) async {
     try {
       final user = _auth.currentUser;
 
@@ -256,6 +358,52 @@ class AuthRepository {
         throw Failure('User is null');
       }
     } catch (e) {
+      throw Failure(e.toString());
+    }
+  }
+
+  Future<void> deleteAccount(String uid) async {
+    try {
+      final user = _auth.currentUser;
+
+      final newUser = FirebaseAuth.instance.currentUser!;
+
+      print("User: $user");
+
+      if (newUser != null) {
+        if (newUser.providerData[0].providerId == 'google.com') {
+          // Skip reauthentication for Google Sign-In
+          // Delete the user document from Firestore
+          await _users.doc(uid).delete();
+
+          // Delete the user from Firebase Authentication
+          // await user.delete();
+
+          // Sign out the user
+          logout();
+        } else {
+          print('reauth');
+          // Re-authenticate the user only for non-Google sign-ins
+          // final credential = EmailAuthProvider.credential(
+          //     email: user.email!, password:);
+          // await user.reauthenticateWithCredential(credential);
+
+          // Delete the user document from Firestore
+          // await _users.doc(uid).delete();
+
+          // Delete the user from Firebase Authentication
+          // await user.delete();
+
+          // Sign out the user
+          logout();
+        }
+      } else {
+        throw Failure('User is null');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
       throw Failure(e.toString());
     }
   }

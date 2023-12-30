@@ -90,49 +90,49 @@ class _HomeState extends ConsumerState<Home> {
             ),
           ),
           actions: [
-            /// Refresh button
-            // IconButton(
-            //   onPressed: () async {
-            //     setState(() {
-            //       // Show loader while refreshing
-            //       usersTask.maybeWhen(
-            //         data: (data) {
-            //           // Set notification count to 0 before refreshing
-            //           notificationCount = 0;
-            //         },
-            //         loading: () {},
-            //         orElse: () {
-            //           // Set loading state explicitly
-            //           notificationCount = 0;
-            //         },
-            //       );
-            //     });
+            // Refresh button
+            IconButton(
+              onPressed: () async {
+                setState(() {
+                  // Show loader while refreshing
+                  usersTask.maybeWhen(
+                    data: (data) {
+                      // Set notification count to 0 before refreshing
+                      notificationCount = 0;
+                    },
+                    loading: () {},
+                    orElse: () {
+                      // Set loading state explicitly
+                      notificationCount = 0;
+                    },
+                  );
+                });
 
-            //     try {
-            //       print('Before refreshing data');
-            //       await refreshUserData();
-            //       print('After refreshing data');
-            //     } catch (e) {
-            //       // Handle error
-            //       Fluttertoast.showToast(msg: e.toString());
-            //     }
-            //   },
-            //   icon: Stack(
-            //     children: [
-            //       const Icon(Icons.refresh),
-            //       if (usersTask.maybeWhen(
-            //           loading: () => true, orElse: () => false))
-            //         Positioned.fill(
-            //           child: Container(
-            //             color: Colors.black26,
-            //             child: const Center(
-            //               child: CircularProgressIndicator.adaptive(),
-            //             ),
-            //           ),
-            //         ),
-            //     ],
-            //   ),
-            // ),
+                try {
+                  print('Before refreshing data');
+                  await refreshUserData();
+                  print('After refreshing data');
+                } catch (e) {
+                  // Handle error
+                  Fluttertoast.showToast(msg: e.toString());
+                }
+              },
+              icon: Stack(
+                children: [
+                  const Icon(Icons.refresh),
+                  if (usersTask.maybeWhen(
+                      loading: () => true, orElse: () => false))
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black26,
+                        child: const Center(
+                          child: CircularProgressIndicator.adaptive(),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
 
             // if user is not null, then show logout button else show login button
             if (user != null)

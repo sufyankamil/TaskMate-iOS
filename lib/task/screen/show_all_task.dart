@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/theme/pallete.dart';
 
-import '../../auth/repository/auth_repository.dart';
 import '../controller/task_controller.dart';
 import 'show_tasks.dart';
 
@@ -32,22 +31,6 @@ class _ShowAllTaskState extends ConsumerState<ShowAllTask> {
         child: Text('Error'),
       ),
     );
-
-    Future<void> _refreshUserData() async {
-      final authRepository = ref.read(authRepositoryProvider);
-
-      try {
-        await authRepository.refreshUserData((user) {
-          ref.read(userProvider.notifier).update((state) => user);
-        });
-      } catch (e) {
-        // Handle error, e.g., show an error message
-        print('Error refreshing user data: $e');
-      }
-    }
-
-    final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-        GlobalKey<RefreshIndicatorState>();
 
     return MaterialApp(
       theme: currentTheme,

@@ -57,4 +57,23 @@ class Constants {
   static const String suggestionsContent =
       'You will soon be able to send us suggestions.';
   static const String switchTheme = 'Switch Theme';
+  static const String deleteAccount = 'Delete Account';
+  static const String deleteAccountContent =
+      'Are you sure you want to delete your account?';
+  static const String delete = 'Delete';
+  static const String cancel = 'Cancel';
+  static const String deletingContent =
+      'Deleting your account is irreversible and will result in the loss of all your data, including profile information, posts, and any associated content. This action cannot be undone.';
+  static const String deleteContent1 =
+      '  If you are certain about deleting your account, please keep in mind the following:';
+  static const String deleteContent2 =
+      '- You will lose access to all features and services associated with your account.';
+  static const String deleteContent3 =
+      '- Any active subscriptions or memberships will be terminated.';
+  static const String deleteContent4 =
+      'Your profile will be removed from the app.';
+  static const confirmation =
+      'To proceed with account deletion, please enter CONFIRM below.';
+
+  static const String deleteAccountSuccess = 'Account deleted successfully';
 }
