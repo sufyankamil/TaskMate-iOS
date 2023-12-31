@@ -89,74 +89,89 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 
-  Future<void> deleteAccount(BuildContext context) async {
-    state = true;
-
-    try {
-      final user = _ref.read(userProvider);
-
-      print(user);
-
-      // print(
-      //     "Provider Ids: ${FirebaseAuth.instance.currentUser!.providerData.map((info) => info.providerId)}");
-      print("---------");
-      // print(FirebaseAuth.instance.currentUser);
-
-      // await FirebaseAuth.instance.currentUser!.delete();
-
-      // print(user);
-
-      // if (user != null) {
-      await _authRepository.deleteAccount(user!.uid);
-    } on Either<Failure, void> catch (either) {
-      // Handle the failure, show error message, etc.
-      SnackBar(
-          content: Text(either.fold((l) => l.message, (_) => 'Unknown error')));
-    } finally {
-      state = false;
-    }
-  }
-
-  Future<void> deleteAccount1(BuildContext context) async {
-    state = true;
-
-    try {
-      final user = _currentUser;
-
-      if (user != null) {
-        print(
-            "Provider Ids: ${user.providerData.map((info) => info.providerId)}");
-        // Pass the uid to deleteAccount
-        await _authRepository.deleteAccount(user.uid);
-        // After deleting the account, you might want to navigate to a different screen or perform other actions.
-        // For example, you can use Navigator.pushReplacement to go to a login screen.
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
-      }
-    } on Either<Failure, void> catch (either) {
-      // Handle the failure, show error message, etc.
-      SnackBar(
-        content: Text(either.fold((l) => l.message, (_) => 'Unknown error')),
-      );
-    } finally {
-      state = false;
-    }
-  }
-
   Future<void> signUpWithEmailAndPassword(String email, String password) async {
     state = true;
     final user =
         await _authRepository.signUpWithEmailAndPassword(email, password);
     state = false;
 
-    user.fold((failure) {
+    user.fold(
+      (failure) {
+        Fluttertoast.showToast(
+          msg: failure.message,
+          backgroundColor: Colors.red,
+          timeInSecForIosWeb: 6,
+        );
+      },
+      (user) {
+        _ref.read(userProvider.notifier).update((state) => user);
+      },
+    );
+  }
+
+  Future<void> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      state = true;
+
+      final user =
+          await _authRepository.signInWithEmailAndPassword(email, password);
+
+      state = false;
+
+      if (user != null) {
+        _ref
+            .read(userProvider.notifier)
+            .update((state) => UserModel.fromUser(user));
+      } else {}
+    } on FirebaseAuthException catch (e) {
+      state = false; // Reset loading state
+
+      switch (e.code) {
+        case 'user-not-found':
+          Fluttertoast.showToast(
+            msg: 'User not found',
+            backgroundColor: Colors.red,
+            timeInSecForIosWeb: 6,
+          );
+          break;
+        case 'wrong-password':
+          Fluttertoast.showToast(
+            msg: 'Incorrect password',
+            backgroundColor: Colors.red,
+            timeInSecForIosWeb: 6,
+          );
+          break;
+        default:
+          Fluttertoast.showToast(
+            msg: 'Authentication failed: ${e.message}',
+            backgroundColor: Colors.red,
+            timeInSecForIosWeb: 6,
+          );
+      }
+    } catch (e) {
       Fluttertoast.showToast(
-        msg: failure.message,
+        msg: 'Error during sign-in: $e',
         backgroundColor: Colors.red,
         timeInSecForIosWeb: 6,
       );
-    }, (user) {
-      _ref.read(userProvider.notifier).update((state) => user);
-    },);
+      state = false;
+    }
+  }
+
+  Future<void> deleteAccount(String uid, String email, String password) async {
+    state = true;
+    try {
+      await _authRepository.deleteAccount(uid, email, password);
+      _ref.read(userProvider.notifier).update((state) => null);
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Error deleting account. Please try again later.',
+        backgroundColor: Colors.red,
+        timeInSecForIosWeb: 6,
+      );
+    } finally {
+      state = false;
+    }
   }
 
   void logout() async {

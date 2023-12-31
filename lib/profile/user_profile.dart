@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/provider/failure.dart';
@@ -255,10 +255,6 @@ class ProfileDrawer extends ConsumerWidget {
             TextButton(
               onPressed: () {
                 confirmDeleteAccount(context, ref);
-                // ref
-                //     .read(authControllerProvider.notifier)
-                //     .deleteAccount();
-                // Routemaster.of(context).replace('/');
               },
               child: const Text(Constants.delete,
                   style: TextStyle(color: Colors.red)),
@@ -278,6 +274,7 @@ class ProfileDrawer extends ConsumerWidget {
         return CupertinoAlertDialog(
           title: const Text('Enter Password'),
           content: CupertinoTextField(
+            controller: passwordController,
             decoration: BoxDecoration(
               border: Border.all(
                 color: Colors.grey,
@@ -301,7 +298,6 @@ class ProfileDrawer extends ConsumerWidget {
             CupertinoDialogAction(
               child: const Text('OK'),
               onPressed: () {
-                // You can add additional validation if needed
                 Navigator.pop(context, passwordController.text);
               },
             ),
@@ -320,7 +316,7 @@ class ProfileDrawer extends ConsumerWidget {
           child: Container(
             color: Colors.white,
             width: double.infinity,
-            height: MediaQuery.of(context).size.height - 60.0,
+            height: 200.0.widthPercent,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -331,7 +327,6 @@ class ProfileDrawer extends ConsumerWidget {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          // showChooseAccountModal(context);
                           Navigator.pop(context);
                         },
                         child: const Icon(
@@ -486,53 +481,62 @@ class ProfileDrawer extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    print("I am in cancel button");
-                    final authController =
-                        ref.read(authControllerProvider.notifier);
-                    await authController.deleteAccount(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
                 CupertinoButton(
                   color: Colors.red,
                   onPressed: () async {
                     final authController =
                         ref.read(authControllerProvider.notifier);
-                    print(authControllerProvider);
-
-                    // authController.deleteAccount(context);
 
                     try {
                       // Check if the entered text is "CONFIRM" to proceed with deletion
                       if (confirmationController.text == 'CONFIRM') {
-                        String? password;
-                        if (authController.currentUser != null) {
-                          final user = authController.currentUser!;
+                        final currentUser = await authController
+                            .authStateChanges
+                            .firstWhere((user) => user != null);
 
-                          print(
-                              "Provider IDs: ${user.providerData.map((info) => info.providerId)}");
+                        final password =
+                            await _showPasswordInputDialog(context);
 
-                          if (user.providerData
-                              .any((info) => info.providerId == 'google.com')) {
-                            // Google sign-in, no need for a password
-                            password = null;
+                        if (currentUser != null) {
+                          final email = currentUser.email ?? '';
+                          // Show the password input dialog
+                          if (password != null) {
+                            // Call the deleteAccount method with user details
+                            await authController.deleteAccount(
+                              currentUser.uid,
+                              email,
+                              password,
+                            );
+                            // Show the success dialog
+                            Fluttertoast.showToast(
+                              msg: 'Account deleted successfully',
+                              backgroundColor: Colors.green,
+                            );
 
-                            print("I am in google sign in");
+                            // Navigate to the home page
+                            Routemaster.of(context).replace('/');
                           } else {
-                            // For email/password users, ask for the password
-                            password = await _showPasswordInputDialog(context);
+                            if (context.mounted) {
+                              showCupertinoDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return CupertinoAlertDialog(
+                                    title: const Text('Deletion Error'),
+                                    content: const Text(
+                                        'Please enter your password to proceed.'),
+                                    actions: [
+                                      CupertinoDialogAction(
+                                        child: const Text('OK'),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
                           }
-
-                          // if (context.mounted && password != null) {
-                          print("I am near delete function");
-                          // Try to delete the account
-                          await authController.deleteAccount(context);
-                          // }
-                        } else {
-                          // Handle the case when currentUser is null
-                          print("User is null");
                         }
                       } else {
                         showCupertinoDialog(

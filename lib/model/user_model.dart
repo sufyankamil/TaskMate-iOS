@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 class UserModel {
   final String name;
   final String email;
@@ -99,5 +101,22 @@ class UserModel {
         lastSeen.hashCode ^
         isAuthenticated.hashCode ^
         karma.hashCode;
+  }
+
+  factory UserModel.fromUser(User user) {
+    return UserModel(
+      uid: user.uid,
+      name: user.displayName ??
+          '', // Replace with your logic for handling null name
+      photoUrl: user.photoURL ??
+          '', // Replace with your logic for handling null photoUrl
+      banner: '', // Replace with your logic for handling null banner
+      lastSeen: DateTime.now().toUtc().toString(),
+      isAuthenticated: true,
+      karma: 0,
+
+      email:
+          user.email ?? '', // Replace with your logic for handling null email
+    );
   }
 }

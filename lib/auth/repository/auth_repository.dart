@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -113,8 +115,120 @@ class AuthRepository {
     }
   }
 
+  Future<User?> signInWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      print(e.code);
+      switch (e.code) {
+        case 'ERROR_USER_NOT_FOUND':
+          Fluttertoast.showToast(
+            msg: 'User with this email doesn\'t exist.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        case 'ERROR_WRONG_PASSWORD':
+          Fluttertoast.showToast(
+            msg: 'Wrong password provided for that user.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        case 'ERROR_INVALID_EMAIL':
+          Fluttertoast.showToast(
+            msg: 'Your email address appears to be malformed.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        case 'ERROR_USER_DISABLED':
+          Fluttertoast.showToast(
+            msg: 'User with this email has been disabled.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        case 'ERROR_TOO_MANY_REQUESTS':
+          Fluttertoast.showToast(
+            msg: 'Too many requests. Try again later.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        case 'ERROR_OPERATION_NOT_ALLOWED':
+          Fluttertoast.showToast(
+            msg: 'Signing in with Email and Password is not enabled.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+        case 'INVALID_LOGIN_CREDENTIALS':
+          Fluttertoast.showToast(
+            msg: 'Operation not allowed.',
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+          break;
+        default:
+          Fluttertoast.showToast(
+            msg: e.toString(),
+            timeInSecForIosWeb: 6,
+            backgroundColor: Colors.red,
+          );
+      }
 
-  
+      Fluttertoast.showToast(msg: e.toString());
+      return null;
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      Fluttertoast.showToast(msg: e.message!);
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  Future<void> deleteAccount(String uid, String email, String password) async {
+    try {
+      final user = _auth.currentUser;
+
+      if (user != null) {
+        // Re-authenticate the user before deleting the account
+        final credential =
+            EmailAuthProvider.credential(email: email, password: password);
+        await user.reauthenticateWithCredential(credential);
+
+        // Delete the user document from Firestore
+        await _users.doc(uid).delete();
+
+        // Delete the user from Firebase Authentication
+        await user.delete();
+
+        // Sign out the user
+        logout();
+      } else {
+        throw Failure('User is null');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      throw Failure(e.toString());
+    }
+  }
 
   Future<bool> userExistsInFirestore(String uid) async {
     // Check if the user exists in Firestore based on the UID
@@ -358,52 +472,6 @@ class AuthRepository {
         throw Failure('User is null');
       }
     } catch (e) {
-      throw Failure(e.toString());
-    }
-  }
-
-  Future<void> deleteAccount(String uid) async {
-    try {
-      final user = _auth.currentUser;
-
-      final newUser = FirebaseAuth.instance.currentUser!;
-
-      print("User: $user");
-
-      if (newUser != null) {
-        if (newUser.providerData[0].providerId == 'google.com') {
-          // Skip reauthentication for Google Sign-In
-          // Delete the user document from Firestore
-          await _users.doc(uid).delete();
-
-          // Delete the user from Firebase Authentication
-          // await user.delete();
-
-          // Sign out the user
-          logout();
-        } else {
-          print('reauth');
-          // Re-authenticate the user only for non-Google sign-ins
-          // final credential = EmailAuthProvider.credential(
-          //     email: user.email!, password:);
-          // await user.reauthenticateWithCredential(credential);
-
-          // Delete the user document from Firestore
-          // await _users.doc(uid).delete();
-
-          // Delete the user from Firebase Authentication
-          // await user.delete();
-
-          // Sign out the user
-          logout();
-        }
-      } else {
-        throw Failure('User is null');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print(e.toString());
-      }
       throw Failure(e.toString());
     }
   }

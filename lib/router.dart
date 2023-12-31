@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:routemaster/routemaster.dart';
+import 'package:task_mate/auth/screens/login_screen.dart';
 import 'package:task_mate/splash/screens/intro_screen_1.dart';
 
 import 'home/screens/homepage.dart';
@@ -15,6 +16,9 @@ final loggedInRoute = RouteMap(
   routes: {
     '/': (route) => const MaterialPage(
           child: Home(),
+        ),
+    '/login': (route) => const MaterialPage(
+          child: LoginScreen(),
         ),
     '/user-profile': (route) => const MaterialPage(
           child: ProfileDrawer(),
@@ -49,7 +53,7 @@ final loggedInRoute = RouteMap(
 // logout route
 final loggedOutRoute = RouteMap(
   routes: {
-    '/': (_) => const MaterialPage(
+    '/': (_) => MaterialPage(
           child: IntroScreen1(),
         ),
   },
