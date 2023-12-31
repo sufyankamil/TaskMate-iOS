@@ -2,8 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:fpdart/fpdart.dart';
-import 'package:routemaster/routemaster.dart';
 
 import '../../model/user_model.dart';
 import '../../provider/failure.dart';
@@ -163,6 +161,29 @@ class AuthController extends StateNotifier<bool> {
     try {
       await _authRepository.deleteAccount(uid, email, password);
       _ref.read(userProvider.notifier).update((state) => null);
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Error deleting account. Please try again later.',
+        backgroundColor: Colors.red,
+        timeInSecForIosWeb: 6,
+      );
+    } finally {
+      state = false;
+    }
+  }
+
+  Future<void> deleteAccountWithApple(
+      BuildContext context, String email, String password) async {
+    state = true;
+    try {
+      final userModel = _ref.read(userProvider);
+
+      if (userModel != null) {
+        await _authRepository.deleteAccountWithApple(userModel, password);
+        _ref.read(userProvider.notifier).update((state) => null);
+      } else {
+        throw Failure('User is null');
+      }
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Error deleting account. Please try again later.',

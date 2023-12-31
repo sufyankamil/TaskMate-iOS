@@ -243,74 +243,6 @@ class AuthRepository {
     }
   }
 
-  // FutureEither<UserModel> signInWithGoogle() async {
-  //   try {
-  //     UserCredential userCredential;
-
-  //     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-  //     final credential = GoogleAuthProvider.credential(
-  //       accessToken: (await googleUser!.authentication).accessToken,
-  //       idToken: (await googleUser.authentication).idToken,
-  //     );
-
-  //     userCredential = await _auth.signInWithCredential(credential);
-
-  //     UserModel user;
-
-  //     if (kDebugMode) {
-  //       print(userCredential.additionalUserInfo!.isNewUser);
-  //     }
-
-  //     if (userCredential.additionalUserInfo!.isNewUser) {
-  //       // create user in firestore
-  //       user = UserModel(
-  //         name: userCredential.user!.displayName!,
-  //         email: userCredential.user!.email!,
-  //         photoUrl: userCredential.user!.photoURL ?? Constants.avatarDefault,
-  //         banner: Constants.bannerDefault,
-  //         uid: userCredential.user!.uid,
-  //         lastSeen: DateTime.now().toString(),
-  //         isAuthenticated: true, // user is not guest
-  //         // emailVerified: false,
-  //         karma: 0,
-  //       );
-  //       if (kDebugMode) {
-  //         print('new user');
-  //       }
-  //       bool userExists = await userExistsInFirestore(user.uid);
-
-  //       if (!userExists) {
-  //         await _users.doc(user.uid).set(user.toMap());
-  //       }
-  //     } else {
-  //       // get user from firestore
-  //       user = await getUserData(userCredential.user!.uid).first;
-  //     }
-  //     return right(user);
-  //     // await _users.doc(userCredential.user!.uid).set(user.toMap());
-  //     // }
-  //     // else {
-  //     //   // get user from firestore
-  //     //   if (kDebugMode) {
-  //     //     print('user already exists');
-
-  //     //   }
-
-  //     //   user = await getUserData(userCredential.user!.uid).first;
-  //     // }
-  //     return right(user);
-  //     // await _auth.signInWithCredential(credential);
-  //   } on FirebaseAuthException catch (e) {
-  //     throw e.message!;
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print(e.toString());
-  //     }
-  //     return left(Failure(e.toString()));
-  //   }
-  // }
-
   // Stream is used to listen to changes in the user's authentication state (persisted in local storage)
   Stream<UserModel> getUserData(String uid) {
     return _users.doc(uid).snapshots().map((snapshot) {
@@ -412,6 +344,48 @@ class AuthRepository {
       return left(Failure(e.toString()));
     }
   }
+
+  Future<void> deleteAccountWithApple(UserModel user, String password) async {
+    try {
+      final user = _auth.currentUser;
+
+      if (user != null) {
+        // Re-authenticate the user before deleting the account
+        final result = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+        );
+
+        final OAuthProvider oAuthProvider = OAuthProvider("apple.com");
+
+        final AuthCredential credential = oAuthProvider.credential(
+          idToken: result.identityToken,
+          accessToken: result.authorizationCode,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+
+        // Delete the user document from Firestore
+        await _users.doc(user.uid).delete();
+
+        // Delete the user from Firebase Authentication
+        await user.delete();
+
+        // Sign out the user
+        logout();
+      } else {
+        throw Failure('User is null');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      throw Failure(e.toString());
+    }
+  }
+
 
   FutureEither<UserModel> isSignedInWithApple() async {
     try {
