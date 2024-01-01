@@ -2,12 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/provider/failure.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../auth/controller/auth_controller.dart';
+import '../auth/repository/auth_repository.dart';
+import '../auth/screens/login_screen.dart';
 import '../common/constants.dart';
 import '../theme/pallete.dart';
 
@@ -18,9 +21,20 @@ class ProfileDrawer extends ConsumerWidget {
     Routemaster.of(context).push('/profile/$uid');
   }
 
-  void logout(WidgetRef ref, BuildContext context) {
+  Future<void> logout(WidgetRef ref, BuildContext context) async {
     ref.read(authControllerProvider.notifier).logout();
-    Routemaster.of(context).replace('/');
+
+    // Pop all routes until reaching the root
+    Navigator.popUntil(context, (route) => route.isFirst);
+
+    // Push the new route after popUntil is completed
+    Future.delayed(Duration.zero, () {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    });
   }
 
   void pushToSubscribe(BuildContext context) {
@@ -124,6 +138,27 @@ class ProfileDrawer extends ConsumerWidget {
           );
   }
 
+  Future<void> logOUT(WidgetRef ref, BuildContext context) async {
+    try {
+      await ref.read(authRepositoryProvider).logoutWithEmailAndPassword();
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle logout error
+      Fluttertoast.showToast(
+        msg: 'Logout error: $e',
+        backgroundColor: Colors.red,
+        timeInSecForIosWeb: 5,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProvider);
@@ -223,7 +258,8 @@ class ProfileDrawer extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  // logOUT(ref, context);
                   logout(ref, context);
                 },
                 style:
@@ -494,12 +530,25 @@ class ProfileDrawer extends ConsumerWidget {
                             .authStateChanges
                             .firstWhere((user) => user != null);
 
-                        final password =
-                            await _showPasswordInputDialog(context);
+                        final isAppleSignIn = currentUser!.providerData.any(
+                            (provider) => provider.providerId == 'apple.com');
 
-                        if (currentUser != null) {
-                          final email = currentUser.email ?? '';
+                        final email = currentUser.email ?? '';
+
+                        if (isAppleSignIn) {
+                          if (context.mounted) {
+                            await authController.deleteAccountWithApple(
+                              context,
+                              currentUser.uid,
+                              email,
+                            );
+                          }
+                          Routemaster.of(context).replace('/');
+                        } else {
                           // Show the password input dialog
+                          final password =
+                              await _showPasswordInputDialog(context);
+
                           if (password != null) {
                             // Call the deleteAccount method with user details
                             await authController.deleteAccount(
@@ -507,13 +556,7 @@ class ProfileDrawer extends ConsumerWidget {
                               email,
                               password,
                             );
-                            // Show the success dialog
-                            Fluttertoast.showToast(
-                              msg: 'Account deleted successfully',
-                              backgroundColor: Colors.green,
-                            );
 
-                            // Navigate to the home page
                             Routemaster.of(context).replace('/');
                           } else {
                             if (context.mounted) {
@@ -538,25 +581,6 @@ class ProfileDrawer extends ConsumerWidget {
                             }
                           }
                         }
-                      } else {
-                        showCupertinoDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return CupertinoAlertDialog(
-                              title: const Text('Confirmation Error'),
-                              content: const Text(
-                                  'Please enter "CONFIRM" to proceed.'),
-                              actions: [
-                                CupertinoDialogAction(
-                                  child: const Text('OK'),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
                       }
                     } on Failure catch (failure) {
                       // Handle the failure, show error message to the user

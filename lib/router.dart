@@ -54,7 +54,7 @@ final loggedInRoute = RouteMap(
 final loggedOutRoute = RouteMap(
   routes: {
     '/': (_) => MaterialPage(
-          child: IntroScreen1(),
+          child: LoginScreen(),
         ),
   },
 );

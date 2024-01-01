@@ -107,12 +107,13 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 
-  Future<void> signInWithEmailAndPassword(String email, String password) async {
+  Future<bool> signInWithEmailAndPassword(
+      String email, String password, BuildContext context) async {
     try {
       state = true;
 
-      final user =
-          await _authRepository.signInWithEmailAndPassword(email, password);
+      final user = await _authRepository.signInWithEmailAndPassword(
+          email, password, context);
 
       state = false;
 
@@ -154,6 +155,7 @@ class AuthController extends StateNotifier<bool> {
       );
       state = false;
     }
+    return false;
   }
 
   Future<void> deleteAccount(String uid, String email, String password) async {

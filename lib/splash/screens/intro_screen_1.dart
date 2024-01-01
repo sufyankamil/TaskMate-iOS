@@ -20,7 +20,7 @@ final tabControllerProvider =
 });
 
 class TabControllerNotifier extends StateNotifier<TabController> {
-  TabControllerNotifier() : super(TabController(length: 2, vsync: TestVSync()));
+  TabControllerNotifier() : super(TabController(length: 3, vsync: TestVSync()));
 
   @override
   void dispose() {
@@ -97,14 +97,14 @@ class IntroScreen1 extends ConsumerWidget {
           : IntroViewsFlutter(
               [
                 PageViewModel(
-                  pageColor: Colors.white,
+                  pageColor: Colors.black,
                   body: const Text('Welcome to Task Hub'),
                   title: RichText(
                     text: const TextSpan(
                       text: 'Task Hub',
                       style: TextStyle(
                         fontFamily: 'MyFont',
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 34,
                       ),
                     ),
@@ -113,50 +113,49 @@ class IntroScreen1 extends ConsumerWidget {
                   mainImage: LottieBuilder.asset('assets/images/page1.json'),
                   titleTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 34,
                   ),
                   bodyTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 24,
                   ),
                 ),
                 PageViewModel(
-                  pageColor: Colors.white,
+                  pageColor: Colors.black,
                   body: const Text('Manage your task with Task Hub'),
                   mainImage: LottieBuilder.asset('assets/images/page2.json'),
                   titleTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 34,
                   ),
                   bodyTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 24,
                   ),
                 ),
                 PageViewModel(
-                  pageColor: Colors.white,
+                  pageColor: Colors.black,
                   body: const Text('Get started with Task Hub'),
                   mainImage:
                       LottieBuilder.asset('assets/images/task_animation.json'),
                   titleTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 34,
                   ),
                   bodyTextStyle: const TextStyle(
                     fontFamily: 'MyFont',
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 24,
                   ),
                 ),
                 // hasError (condirion)
-
                 PageViewModel(
-                  pageColor: Colors.white,
+                  pageColor: Colors.black,
                   body: Row(
                     children: [
                       LottieBuilder.asset('assets/images/page2.json'),
@@ -193,39 +192,80 @@ class IntroScreen1 extends ConsumerWidget {
     final tabController = ref.watch(tabControllerProvider);
 
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            appBar: AppBar(
+      color: Colors.black,
+      debugShowCheckedModeBanner: false,
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(24.0.widthPercent),
+            child: AppBar(
+              backgroundColor: Colors.black,
               bottom: TabBar(
                 controller: tabController,
-                tabs: const [
+                tabs: [
                   Tab(
-                    iconMargin: EdgeInsets.only(bottom: 10),
-                    icon: Icon(FontAwesomeIcons.userPlus, color: Colors.black),
-                    text: 'Sign up',
-                  ),
+                      iconMargin: const EdgeInsets.only(bottom: 10),
+                      icon: const Icon(FontAwesomeIcons.userPlus,
+                          color: Colors.white),
+                      child: Text(
+                        'Sign up',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 3.9.widthPercent,
+                        ),
+                        textAlign: TextAlign.center,
+                      )),
                   Tab(
-                    icon: Icon(FontAwesomeIcons.arrowRightToBracket,
-                        color: Colors.black),
-                    text: 'Sign in',
+                      icon: const Icon(FontAwesomeIcons.apple,
+                          color: Colors.white),
+                      child: Text(
+                        'Sign up with Apple',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 3.9.widthPercent,
+                        ),
+                        textAlign: TextAlign.center,
+                      )),
+                  Tab(
+                    icon: const Icon(FontAwesomeIcons.arrowRightToBracket,
+                        color: Colors.white),
+                    child: Text(
+                      'Sign in',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 3.9.widthPercent,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
               ),
-              title: tabController.index == 0
-                  ? const Text('Create an account')
-                  : const Text('Sign in'),
-            ),
-            body: TabBarView(
-              controller: tabController,
-              children: [
-                buildSignUpView(context, ref),
-                buildSignInView(context, ref),
-              ],
             ),
           ),
-        ));
+          body: Container(
+            color: Colors.white,
+            height: MediaQuery.of(context).size.height -
+                kToolbarHeight -
+                kBottomNavigationBarHeight,
+            child: SingleChildScrollView(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height / 2.5,
+                child: TabBarView(
+                  controller: tabController,
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    buildSignUpView(context, ref),
+                    buildSignUpAppleView(context, ref),
+                    buildSignInView(context, ref),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget buildSignUpView(BuildContext context, WidgetRef ref) {
@@ -328,6 +368,54 @@ class IntroScreen1 extends ConsumerWidget {
     );
   }
 
+  Widget buildSignUpAppleView(BuildContext context, WidgetRef ref) {
+    final authController = ref.read(authControllerProvider.notifier);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 20),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(0),
+            ),
+          ),
+          onPressed: () async {
+            try {
+              // Set loading state
+              authController.state = true;
+
+              // Call the signInWithApple method from AuthController
+              await authController.signInWithApple(context);
+            } finally {
+              // Reset loading state
+              authController.state = false;
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                FontAwesomeIcons.apple,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Sign up with Apple',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 5.0.widthPercent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget buildSignInView(BuildContext context, WidgetRef ref) {
     final TextEditingController emailController = TextEditingController();
 
@@ -408,6 +496,7 @@ class IntroScreen1 extends ConsumerWidget {
                 await authController.signInWithEmailAndPassword(
                   emailController.text,
                   passwordController.text,
+                  context,
                 );
               }
             } finally {

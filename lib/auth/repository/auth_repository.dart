@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
@@ -116,7 +117,10 @@ class AuthRepository {
   }
 
   Future<User?> signInWithEmailAndPassword(
-      String email, String password) async {
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     try {
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -155,12 +159,24 @@ class AuthRepository {
             backgroundColor: Colors.red,
           );
           break;
-        case 'ERROR_TOO_MANY_REQUESTS':
-          Fluttertoast.showToast(
-            msg: 'Too many requests. Try again later.',
-            timeInSecForIosWeb: 6,
-            backgroundColor: Colors.red,
+        case 'too-many-requests':
+          await showPlatformDialog(
+            context: context,
+            builder: (_) => BasicDialogAlert(
+              title: const Text("Too Many Requests"),
+              content: const Text(
+                  "Access to this account has been temporarily disabled due to many failed login attempts. You can try again later."),
+              actions: <Widget>[
+                BasicDialogAction(
+                  title: const Text("OK"),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
           );
+
           break;
         case 'ERROR_OPERATION_NOT_ALLOWED':
           Fluttertoast.showToast(
@@ -170,20 +186,21 @@ class AuthRepository {
           );
         case 'INVALID_LOGIN_CREDENTIALS':
           Fluttertoast.showToast(
-            msg: 'Operation not allowed.',
+            msg: 'Invalid login credentials',
             timeInSecForIosWeb: 6,
             backgroundColor: Colors.red,
           );
           break;
         default:
           Fluttertoast.showToast(
-            msg: e.toString(),
+            msg: 'Unable to login. Please try again later.',
             timeInSecForIosWeb: 6,
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.purple,
           );
       }
-
-      Fluttertoast.showToast(msg: e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
       return null;
     }
   }
@@ -219,6 +236,11 @@ class AuthRepository {
 
         // Sign out the user
         logout();
+
+        Fluttertoast.showToast(
+          msg: 'Account deleted successfully',
+          backgroundColor: Colors.green,
+        );
       } else {
         throw Failure('User is null');
       }
@@ -373,6 +395,11 @@ class AuthRepository {
         // Delete the user from Firebase Authentication
         await user.delete();
 
+        Fluttertoast.showToast(
+          msg: 'Account deleted successfully',
+          backgroundColor: Colors.green,
+        );
+
         // Sign out the user
         logout();
       } else {
@@ -385,7 +412,6 @@ class AuthRepository {
       throw Failure(e.toString());
     }
   }
-
 
   FutureEither<UserModel> isSignedInWithApple() async {
     try {
@@ -451,7 +477,17 @@ class AuthRepository {
   }
 
   void logout() async {
-    await _googleSignIn.signOut();
     await _auth.signOut();
+  }
+
+  Future<void> logoutWithEmailAndPassword() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      throw Failure(e.toString());
+    }
   }
 }
