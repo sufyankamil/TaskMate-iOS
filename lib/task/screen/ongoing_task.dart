@@ -6,6 +6,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lottie/lottie.dart';
 import 'package:routemaster/routemaster.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
 import '../../../model/task_model.dart';
@@ -334,6 +335,8 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
   }
 
   Container listOfSubTask(List<String> todoTitles, int index) {
+    final _key1 = GlobalKey();
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -355,8 +358,13 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
               ),
             ),
             Expanded(
-              child: ListTile(
-                title: Text(todoTitles[index]),
+              child: Showcase(
+                key: _key1,
+                description: 'Click to edit the task',
+                overlayColor: Colors.blueGrey,
+                child: ListTile(
+                  title: Text(todoTitles[index]),
+                ),
               ),
             ),
           ],

@@ -1,3 +1,5 @@
+import 'package:task_mate/collaboration/task_collaboration.dart';
+
 import '../report/screens/show_report.dart';
 import '../task/screen/add_task.dart';
 import '../task/screen/show_all_task.dart';
@@ -16,10 +18,12 @@ class Constants {
   static const communitiesCollection = 'communities';
   static const tasksCollection = 'tasks';
   static const commentsCollection = 'comments';
+  static const sessionCollection = 'sessions';
 
   static const tabWidgets = [
     ShowAllTask(),
     AddTask(),
+    TaskCollaboration(),
     ShowReport(),
   ];
 

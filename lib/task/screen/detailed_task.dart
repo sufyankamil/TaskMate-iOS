@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/task/screen/ongoing_task.dart';
@@ -171,7 +172,12 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                   ),
                 ),
             const SizedBox(height: 10.0),
-            OnGoingTask(taskId: widget.taskId),
+            ShowCaseWidget(
+              autoPlay: true,
+              builder: Builder(
+                builder: (context) => OnGoingTask(taskId: widget.taskId),
+              ),
+            ),
           ],
         ),
       ),
