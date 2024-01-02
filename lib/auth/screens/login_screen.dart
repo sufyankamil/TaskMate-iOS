@@ -1,14 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:lottie/lottie.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/home/screens/homepage.dart';
-import 'package:task_mate/model/user_model.dart';
 
-import '../../provider/failure.dart';
 import '../controller/auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -174,24 +171,34 @@ class FInalLogin extends ConsumerStatefulWidget {
 class _FInalLoginState extends ConsumerState<FInalLogin> {
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(authControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.black,
         elevation: 0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            // mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              buildSignUpView(context, ref),
-            ],
-          ),
-        ),
-      ),
+      body: isLoading
+          ? Container(
+              color: Colors.black,
+              child: const Center(
+                child: CircularProgressIndicator.adaptive(
+                  semanticsLabel: 'Please wait...',
+                ),
+              ),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
+                    buildSignUpView(context, ref),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -282,18 +289,22 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
                   authController.state = true;
 
                   // Call the signUpWithEmailAndPassword method from AuthController
-                  await authController.signUpWithEmailAndPassword(
+                  final result =
+                      await authController.signUpWithEmailAndPassword(
                     emailController.text,
                     passwordController.text,
                   );
-                  if (context.mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const Home(),
-                      ),
-                    );
-                  }
+                  print(result);
+                  if (result) {
+                    if (context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Home(),
+                        ),
+                      );
+                    }
+                  } else {}
                 } finally {
                   // Reset loading state
                   authController.state = false;
@@ -392,6 +403,8 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
                   ),
                 );
               }
+            } catch (e) {
+              print(e);
             } finally {
               // Reset loading state
               authController.state = false;
@@ -430,6 +443,7 @@ class SigninPage extends ConsumerStatefulWidget {
 class _SigninPageState extends ConsumerState<SigninPage> {
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(authControllerProvider);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -437,17 +451,26 @@ class _SigninPageState extends ConsumerState<SigninPage> {
         backgroundColor: Colors.black,
         elevation: 0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              buildSignInView(context, ref),
-            ],
-          ),
-        ),
-      ),
+      body: isLoading
+          ? Container(
+              color: Colors.black,
+              child: const Center(
+                child: CircularProgressIndicator.adaptive(
+                  semanticsLabel: 'Please wait...',
+                ),
+              ),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
+                    buildSignInView(context, ref),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -480,8 +503,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      const Home(), // Replace HomeScreen with your actual home screen widget
+                  builder: (context) => const Home(),
                 ),
               );
             } finally {
@@ -505,6 +527,79 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     final TextEditingController emailController = TextEditingController();
 
     final TextEditingController passwordController = TextEditingController();
+
+    final TextEditingController resetPasswordController =
+        TextEditingController();
+
+    Future<void> handleResetPassword(String email, WidgetRef ref) async {
+      final authController = ref.read(authControllerProvider.notifier);
+
+      try {
+        // Set loading state
+        authController.state = true;
+
+        // Call the handleResetPassword method from AuthController
+        await authController.sendPasswordResetEmail(email);
+      } finally {
+        // Reset loading state
+        authController.state = false;
+      }
+    }
+
+    void handeForgtPassword(BuildContext context) {
+      showCupertinoDialog(
+        context: context,
+        builder: (BuildContext context) => CupertinoAlertDialog(
+          title: const Text('Reset Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter your email to reset the password.'),
+              const SizedBox(height: 10),
+              CupertinoTextFormFieldRow(
+                controller: resetPasswordController,
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  color: CupertinoColors.white,
+                  border: Border(
+                    bottom: BorderSide(
+                      width: 0,
+                      color: CupertinoColors.inactiveGray,
+                    ),
+                  ),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                prefix: const Text('Email: '),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              onPressed: () async {
+                await handleResetPassword(resetPasswordController.text, ref);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Reset Password'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Form(
       key: _formKey,
@@ -567,6 +662,35 @@ class _SigninPageState extends ConsumerState<SigninPage> {
             ),
           ),
           const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(width: 10),
+              Text(
+                'Forgot password?',
+                style: TextStyle(
+                  fontFamily: 'MyFont',
+                  color: Colors.white,
+                  fontSize: 4.0.widthPercent,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // handlePasswordReset(context);
+                  handeForgtPassword(context);
+                },
+                child: Text(
+                  'Reset',
+                  style: TextStyle(
+                    fontFamily: 'MyFont',
+                    color: Colors.red,
+                    fontSize: 4.0.widthPercent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
@@ -585,6 +709,8 @@ class _SigninPageState extends ConsumerState<SigninPage> {
                     passwordController.text,
                     context,
                   );
+
+                  print(result);
 
                   if (result) {
                     if (context.mounted) {

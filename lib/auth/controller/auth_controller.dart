@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -87,7 +89,7 @@ class AuthController extends StateNotifier<bool> {
     );
   }
 
-  Future<void> signUpWithEmailAndPassword(String email, String password) async {
+  Future<bool> signUpWithEmailAndPassword(String email, String password) async {
     state = true;
     final user =
         await _authRepository.signUpWithEmailAndPassword(email, password);
@@ -105,6 +107,32 @@ class AuthController extends StateNotifier<bool> {
         _ref.read(userProvider.notifier).update((state) => user);
       },
     );
+    return true;
+  }
+
+  Future<void> sendWelcomeEmail(String userEmail) async {
+    final MailOptions mailOptions = MailOptions(
+      body:
+          'Welcome to TASK HUB! Thank you for signing up. Here are some features:\n'
+          '- Feature 1\n'
+          '- Feature 2\n'
+          '- Feature 3',
+      subject: 'Welcome to TASK HUB',
+      recipients: [userEmail],
+      isHTML: false,
+    );
+
+    try {
+      final result = await FlutterMailer.send(mailOptions);
+
+      if (kDebugMode) {
+        print('Email sent: $result');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error sending email: $e');
+      }
+    }
   }
 
   Future<bool> signInWithEmailAndPassword(
@@ -155,7 +183,77 @@ class AuthController extends StateNotifier<bool> {
       );
       state = false;
     }
-    return false;
+    return true;
+  }
+
+  Future<void> resetMailer(String userEmail) async {
+    final MailOptions mailOptions = MailOptions(
+      body: '''
+      <html>
+        <body>
+          <p>Hello,</p>
+          <p>Follow this link to reset your password for your $userEmail account.</p>
+          <p><a href="YOUR_RESET_PASSWORD_LINK">Reset Password</a></p>
+          <p>If you didn’t ask to reset your password, you can ignore this email.</p>
+          <p>Thanks,</p>
+          <p>Task Hub Team</p>
+        </body>
+      </html>
+    ''',
+      subject: 'Reset Your Password - Task Hub',
+      recipients: [userEmail],
+      isHTML: true,
+    );
+
+    try {
+      final result = await FlutterMailer.send(mailOptions);
+
+      if (kDebugMode) {
+        print('Email sent: $result');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error sending email: $e');
+      }
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      // Check if the user exists in the database (pseudo-code, actual implementation depends on your setup)
+      bool userExists = await _authRepository.userExists(email);
+
+      if (userExists) {
+        // Set loading state
+        state = true;
+
+        // Call the sendPasswordResetEmail method from AuthRepository
+        await _authRepository.sendPasswordResetEmail(email);
+
+        Fluttertoast.showToast(
+          msg: 'Password reset link sent to $email. Check your email.',
+          backgroundColor: Colors.green,
+          timeInSecForIosWeb: 5,
+        );
+      } else {
+        // Notify the user that the email is not registered
+        Fluttertoast.showToast(
+          msg: 'Email $email is not registered with us.',
+          backgroundColor: Colors.red,
+          timeInSecForIosWeb: 5,
+        );
+      }
+    } on Failure catch (failure) {
+      // Handle other failures, e.g., show an error message
+      Fluttertoast.showToast(
+        msg: 'Failed to send password reset email: ${failure.message}',
+        backgroundColor: Colors.red,
+        timeInSecForIosWeb: 5,
+      );
+    } finally {
+      // Reset loading state
+      state = false;
+    }
   }
 
   Future<void> deleteAccount(String uid, String email, String password) async {

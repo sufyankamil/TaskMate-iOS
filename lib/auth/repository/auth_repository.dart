@@ -205,16 +205,32 @@ class AuthRepository {
     }
   }
 
-  Future<void> sendPasswordResetEmail(String email) async {
+  Future<bool> userExists(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message!);
+      final user = await _auth.fetchSignInMethodsForEmail(email);
+      return user.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {
         print(e.toString());
       }
-      Fluttertoast.showToast(msg: e.toString());
+      return false;
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      // Handle FirebaseAuthException, e.g., show an error message
+      if (kDebugMode) {
+        print('Failed to send password reset email: ${e.message}');
+      }
+      throw Failure(e.message!);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error sending password reset email: $e');
+      }
+      throw Failure(e.toString());
     }
   }
 
@@ -357,8 +373,12 @@ class AuthRepository {
       }
 
       return right(user);
-    } on FirebaseAuthException catch (e) {
-      throw e.message!;
+    } on SignInWithAppleException catch (e) {
+      Fluttertoast.showToast(
+          msg: 'The operation couldn’t be completed. Try again later.',
+          backgroundColor: Colors.red);
+
+      throw e;
     } catch (e) {
       if (kDebugMode) {
         print(e.toString());
@@ -482,7 +502,8 @@ class AuthRepository {
 
   Future<void> logoutWithEmailAndPassword() async {
     try {
-      await _auth.signOut();
+      // await _auth.signOut();
+      await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (kDebugMode) {
         print(e.toString());
