@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:task_mate/provider/providers.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../common/constants.dart';
 import '../../model/session_model.dart';
@@ -31,14 +32,18 @@ class SessionRepository {
     try {
       User? user = _auth.currentUser;
 
+      final id = const Uuid().v4();
+
       if (user == null) {
         throw Exception("User not authenticated");
       }
 
       // Create a new session document in Firestore
       DocumentReference sessionRef = await _userSession.add({
+        'id': id,
         'ownerId': user.uid,
         'createdAt': FieldValue.serverTimestamp(),
+        'endedAt': null,
         'tasks': [],
       });
 
@@ -48,6 +53,38 @@ class SessionRepository {
         print("Error creating new session: $e");
       }
       rethrow; // Rethrow the exception to handle it at the calling site
+    }
+  }
+
+  // Function to end the session and update the 'endedAt' timestamp
+  Future<void> endSession(String sessionId) async {
+    try {
+      // Get the reference to the session document
+      DocumentReference sessionDocRef = _userSession.doc(sessionId);
+
+      // Update the 'endedAt' field with the current timestamp
+      await sessionDocRef.update({
+        'endedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error ending session: $e");
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> checkSessionExists(String sessionId) async {
+    try {
+      // Use the session ID to query the database and check if the session exists
+      // For example, you can check if a document with the given ID exists in Firestore
+      DocumentSnapshot sessionSnapshot =
+          await _userSession.doc(sessionId).get();
+
+      return sessionSnapshot.exists;
+    } catch (e) {
+      // Handle error or rethrow as needed
+      rethrow;
     }
   }
 
