@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/collaboration/repository/session_repository.dart';
 import 'package:uuid/uuid.dart';
@@ -20,6 +18,20 @@ final sessionControllerProvider =
     sessionRepository: sessionRepository,
   );
 });
+
+final sessionIdProvider = StateProvider<String?>((ref) => null);
+
+final usersInSessionProvider = StreamProvider<List<String>>((ref) {
+  // Replace 'sessionId' with the actual session ID
+  final sessionId = ref.watch(sessionIdProvider);
+  final sessionRepository = ref.watch(sessionRepositoryProvider);
+
+  // Return the stream of users who have joined the session
+  return sessionId != null
+      ? sessionRepository.getUsersInSession(sessionId)
+      : Stream.value([]); // Return an empty list if the session ID is null
+});
+
 
 class SessionController extends StateNotifier<bool> {
   final Ref _ref;
@@ -101,7 +113,7 @@ class SessionController extends StateNotifier<bool> {
     }
   }
 
-  Future<void> joinSession(String sessionId) async {
+  Future<bool> joinSession(String sessionId) async {
     try {
       // Set loading to true when starting the operation
       state = true;
@@ -125,6 +137,9 @@ class SessionController extends StateNotifier<bool> {
 
       // Set loading to false after the operation completes
       state = false;
+
+      // Return the actual result based on session existence
+      return sessionExists;
     } catch (e) {
       state = false;
       if (kDebugMode) {
@@ -184,6 +199,20 @@ class SessionController extends StateNotifier<bool> {
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching session tasks: $e");
+      }
+      rethrow;
+    }
+  }
+
+  void fetchUsersInSession(String sessionId) {
+    try {
+      _sessionRepository.getUsersInSession(sessionId).listen((users) {
+        // Handle the list of users who have joined the session
+        print("Users in session: $users");
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching users in session: $e");
       }
       rethrow;
     }

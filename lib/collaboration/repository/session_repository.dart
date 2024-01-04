@@ -76,8 +76,6 @@ class SessionRepository {
 
   Future<bool> checkSessionExists(String sessionId) async {
     try {
-      // Use the session ID to query the database and check if the session exists
-      // For example, you can check if a document with the given ID exists in Firestore
       DocumentSnapshot sessionSnapshot =
           await _userSession.doc(sessionId).get();
 
@@ -141,6 +139,26 @@ class SessionRepository {
     } catch (e) {
       if (kDebugMode) {
         print("Error getting session tasks: $e");
+      }
+      rethrow;
+    }
+  }
+
+  // Function to fetch users who have joined the session
+  Stream<List<String>> getUsersInSession(String sessionId) {
+    try {
+      return _userSession
+          .doc(sessionId)
+          .collection('users')
+          .snapshots()
+          .map((querySnapshot) {
+        return querySnapshot.docs
+            .map((doc) => doc['email'] as String)
+            .toList();
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching users in session: $e");
       }
       rethrow;
     }
