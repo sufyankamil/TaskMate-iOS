@@ -48,8 +48,10 @@ final loggedInRoute = RouteMap(
     '/support': (route) => const MaterialPage(
           child: SupportPage(),
         ),
-    '/session-joined': (route) => const MaterialPage(
-          child: SessionJoined(),
+    '/session-joined/:sessionId': (route) => MaterialPage(
+          child: SessionJoined(
+            sessionId: route.pathParameters['sessionId']!,
+          ),
         ),
   },
 );

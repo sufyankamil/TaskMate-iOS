@@ -45,6 +45,7 @@ class SessionRepository {
         'createdAt': FieldValue.serverTimestamp(),
         'endedAt': null,
         'tasks': [],
+        'usersJoined': [],
       });
 
       return sessionRef.id; // Return the session ID
@@ -82,6 +83,35 @@ class SessionRepository {
       return sessionSnapshot.exists;
     } catch (e) {
       // Handle error or rethrow as needed
+      rethrow;
+    }
+  }
+
+  Future<bool> joinSession(String sessionId, String userEmail) async {
+    try {
+      // Check if the session exists
+      bool sessionExists = await checkSessionExists(sessionId);
+
+      if (sessionExists) {
+        // Add the user's email to the 'usersJoined' field
+        await _userSession.doc(sessionId).update({
+          'usersJoined': FieldValue.arrayUnion([userEmail]),
+        });
+
+        if (kDebugMode) {
+          print('Successfully joined session with ID: $sessionId');
+        }
+      } else {
+        if (kDebugMode) {
+          print('Session with ID $sessionId does not exist');
+        }
+      }
+
+      return sessionExists;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error joining session: $e');
+      }
       rethrow;
     }
   }
@@ -144,17 +174,25 @@ class SessionRepository {
     }
   }
 
-  // Function to fetch users who have joined the session
   Stream<List<String>> getUsersInSession(String sessionId) {
     try {
-      return _userSession
-          .doc(sessionId)
-          .collection('users')
-          .snapshots()
-          .map((querySnapshot) {
-        return querySnapshot.docs
-            .map((doc) => doc['email'] as String)
-            .toList();
+      return _userSession.doc(sessionId).snapshots().map((docSnapshot) {
+        if (docSnapshot.exists) {
+          final List<dynamic>? usersData = docSnapshot['usersJoined'];
+
+          if (usersData != null) {
+            final List<String> users =
+                usersData.map((user) => user.toString()).toList();
+
+            return users;
+          }
+        }
+
+        return <String>[];
+      }).handleError((error) {
+        if (kDebugMode) {
+          print("Error fetching users in session: $error");
+        }
       });
     } catch (e) {
       if (kDebugMode) {

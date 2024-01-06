@@ -19,19 +19,46 @@ final sessionControllerProvider =
   );
 });
 
-final sessionIdProvider = StateProvider<String?>((ref) => null);
+// final sessionIdProvider = StateProvider<String?>((ref) => null);
+
+// final usersInSessionProvider = StreamProvider<List<String>>((ref) {
+//   final sessionId = ref.watch(sessionIdProvider);
+//   final sessionRepository = ref.watch(sessionRepositoryProvider);
+
+//   print(sessionId);
+//   print(sessionRepository);
+
+//   // Return the stream of users who have joined the session
+//   return sessionId != null
+//       ? sessionRepository.getUsersInSession(sessionId)
+//       : Stream.value([]); // Return an empty list if the session ID is null
+// });
+
+class SessionIdController extends StateNotifier<String?> {
+  SessionIdController() : super(null);
+
+  void setSessionId(String sessionId) {
+    state = sessionId;
+  }
+}
+
+final sessionIdProvider =
+    StateNotifierProvider<SessionIdController, String?>((ref) {
+  return SessionIdController();
+});
 
 final usersInSessionProvider = StreamProvider<List<String>>((ref) {
-  // Replace 'sessionId' with the actual session ID
   final sessionId = ref.watch(sessionIdProvider);
   final sessionRepository = ref.watch(sessionRepositoryProvider);
+
+  print(sessionId);
+  print(sessionRepository);
 
   // Return the stream of users who have joined the session
   return sessionId != null
       ? sessionRepository.getUsersInSession(sessionId)
       : Stream.value([]); // Return an empty list if the session ID is null
 });
-
 
 class SessionController extends StateNotifier<bool> {
   final Ref _ref;
@@ -113,18 +140,19 @@ class SessionController extends StateNotifier<bool> {
     }
   }
 
-  Future<bool> joinSession(String sessionId) async {
+  Future<bool> joinSession(String sessionId, String userEmail) async {
     try {
       // Set loading to true when starting the operation
       state = true;
 
-      // Use the session ID to fetch session details or perform necessary actions
-      // For example, you can check if the session exists and then proceed accordingly
       bool sessionExists =
           await _sessionRepository.checkSessionExists(sessionId);
 
       if (sessionExists) {
-        // Perform actions to join the session
+        // Call the repository function to join the session with the user's email
+        await _sessionRepository.joinSession(sessionId, userEmail);
+
+        // Perform actions to join the session (if needed)
         if (kDebugMode) {
           print('Successfully joined session with ID: $sessionId');
         }
@@ -204,12 +232,11 @@ class SessionController extends StateNotifier<bool> {
     }
   }
 
-  void fetchUsersInSession(String sessionId) {
+  Stream<List<String>> fetchUsersInSession(String sessionId) {
     try {
-      _sessionRepository.getUsersInSession(sessionId).listen((users) {
-        // Handle the list of users who have joined the session
-        print("Users in session: $users");
-      });
+      return _sessionRepository
+          .getUsersInSession(sessionId)
+          .asBroadcastStream();
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching users in session: $e");
@@ -217,4 +244,20 @@ class SessionController extends StateNotifier<bool> {
       rethrow;
     }
   }
+
+  // void fetchUsersInSession(String sessionId) {
+  //   try {
+  //     _sessionRepository.getUsersInSession(sessionId).listen((users) {
+  //       // Handle the list of users who have joined the session
+  //       if (kDebugMode) {
+  //         print("Users in session: $users");
+  //       }
+  //     });
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print("Error fetching users in session: $e");
+  //     }
+  //     rethrow;
+  //   }
+  // }
 }

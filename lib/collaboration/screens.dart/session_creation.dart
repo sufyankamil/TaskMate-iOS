@@ -37,8 +37,8 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
     sessionsCreated = ref.read(sessionsCreatedProvider);
   }
 
-  void navigateToSessionJoined(BuildContext context) {
-    Routemaster.of(context).push('/session-joined');
+  void navigateToSessionJoined(BuildContext context, String sessionId) {
+    Routemaster.of(context).push('/session-joined/$sessionId');
   }
 
   @override
@@ -47,7 +47,6 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
 
     String sessionId = '';
 
-    bool isSuccess = false;
 
     return Scaffold(
       body: SafeArea(
@@ -90,8 +89,6 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
                       } else {
                         sessionId =
                             await sessionController.createNewSession(context);
-
-                        // _showLoadingIndicator(context, sessionId);
 
                         _showSessionCreationSuccess(context, sessionId);
                       }
@@ -242,11 +239,13 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
     Future.delayed(const Duration(milliseconds: 500));
 
     // Now, navigate to the JoinedSession screen
-    navigateToSessionJoined(context);
+    navigateToSessionJoined(context, sessionId);
   }
 
   sessionTextFormFIeld(WidgetRef ref) {
     final TextEditingController sessionTextController = TextEditingController();
+
+    final TextEditingController emailTextController = TextEditingController();
 
     final sessionController = ref.watch(sessionControllerProvider.notifier);
 
@@ -255,43 +254,41 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Enter session ID'),
-          content: TextField(
-            controller: sessionTextController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Session ID',
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: sessionTextController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Session ID',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: emailTextController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Email',
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () async {
-                // Get the session ID from the user
+                // Get the session ID & email from the user
                 String sessionId = sessionTextController.text;
-                if (sessionId.isNotEmpty) {
-                  bool result = await sessionController.joinSession(sessionId);
+
+                String userEmail = emailTextController.text;
+
+                if (sessionId.isNotEmpty && userEmail.isNotEmpty) {
+                  bool result =
+                      await sessionController.joinSession(sessionId, userEmail);
 
                   if (result) {
                     if (context.mounted) {
                       _showLoadingIndicator(context, sessionId);
-                      // showPlatformDialog(
-                      //   context: context,
-                      //   builder: (context) {
-                      //     return CupertinoAlertDialog(
-                      //       title: const Text('Session Joined'),
-                      //       content: const Text(
-                      //           "You have successfully joined the session."),
-                      //       actions: [
-                      //         CupertinoDialogAction(
-                      //           onPressed: () {
-                      //             // Navigator.pop(context);
-                      //             navigateToSessionJoined(context);
-                      //           },
-                      //           child: const Text('OK'),
-                      //         ),
-                      //       ],
-                      //     );
-                      //   },
-                      // );
                     }
                   } else {
                     if (context.mounted) {
@@ -314,6 +311,27 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
                         },
                       );
                     }
+                  }
+                } else {
+                  if (context.mounted) {
+                    showPlatformDialog(
+                      context: context,
+                      builder: (context) {
+                        return CupertinoAlertDialog(
+                          title: const Text('Invalid details'),
+                          content: const Text(
+                              "Please enter a valid details to join a session."),
+                          actions: [
+                            CupertinoDialogAction(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   }
                 }
               },
