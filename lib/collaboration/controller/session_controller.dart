@@ -244,20 +244,4 @@ class SessionController extends StateNotifier<bool> {
       rethrow;
     }
   }
-
-  // void fetchUsersInSession(String sessionId) {
-  //   try {
-  //     _sessionRepository.getUsersInSession(sessionId).listen((users) {
-  //       // Handle the list of users who have joined the session
-  //       if (kDebugMode) {
-  //         print("Users in session: $users");
-  //       }
-  //     });
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print("Error fetching users in session: $e");
-  //     }
-  //     rethrow;
-  //   }
-  // }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
 import '../controller/session_controller.dart';
@@ -18,6 +19,10 @@ class SessionJoined extends ConsumerStatefulWidget {
 
 class _SessionJoinedState extends ConsumerState<SessionJoined> {
   TextEditingController sessionIdController = TextEditingController();
+
+  void navigateToSessionCreation() {
+    Routemaster.of(context).push('/');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,8 +143,6 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
           children: [
             Text("Session Joined"),
             SizedBox(height: 20),
-
-            // Display the list of users who have joined the session
           ],
         ),
       ),
@@ -165,7 +168,6 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text('Total Users Joined: $userCount'),
-              if (userCount == 0) const Text('No users in session'),
             ],
           );
         }
@@ -174,6 +176,7 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
   }
 
   Future<dynamic> endSessionMethod(BuildContext context) {
+    final sessionController = ref.watch(sessionControllerProvider.notifier);
     return showPlatformDialog(
       context: context,
       builder: (_) => BasicDialogAlert(
@@ -189,10 +192,10 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
           BasicDialogAction(
             title: const Text('End Session'),
             onPressed: () {
-              // sessionController.endSession(
-              //     widget.sessionId);
+              sessionController.endSession();
               Navigator.pop(context);
               Navigator.pop(context);
+              navigateToSessionCreation();
             },
           ),
         ],

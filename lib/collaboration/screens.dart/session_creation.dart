@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/collaboration/controller/session_controller.dart';
 
