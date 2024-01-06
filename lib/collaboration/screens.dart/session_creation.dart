@@ -46,7 +46,6 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
 
     String sessionId = '';
 
-
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -284,6 +283,8 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
                 if (sessionId.isNotEmpty && userEmail.isNotEmpty) {
                   bool result =
                       await sessionController.joinSession(sessionId, userEmail);
+
+                  Navigator.pop(context);
 
                   if (result) {
                     if (context.mounted) {

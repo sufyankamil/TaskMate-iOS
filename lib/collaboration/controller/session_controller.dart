@@ -1,14 +1,17 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/collaboration/repository/session_repository.dart';
+import 'package:task_mate/model/session_model.dart';
 import 'package:uuid/uuid.dart';
-import '../../model/session_model.dart';
+import '../../model/session_task_model.dart';
 
 final sessionControllerProvider =
     StateNotifierProvider.autoDispose<SessionController, bool>((ref) {
@@ -51,9 +54,6 @@ final usersInSessionProvider = StreamProvider<List<String>>((ref) {
   final sessionId = ref.watch(sessionIdProvider);
   final sessionRepository = ref.watch(sessionRepositoryProvider);
 
-  print(sessionId);
-  print(sessionRepository);
-
   // Return the stream of users who have joined the session
   return sessionId != null
       ? sessionRepository.getUsersInSession(sessionId)
@@ -72,12 +72,23 @@ class SessionController extends StateNotifier<bool> {
 
   Future<String> createNewSession(BuildContext context) async {
     try {
+      final id = const Uuid().v4();
+      // Create a new session model
+      Session sessionModel = Session(
+        id: id,
+        ownerId: _ref.read(userProvider)?.uid ?? '',
+        createdAt: Timestamp.now(),
+        endedAt: '',
+        tasks: [],
+        usersJoined: [],
+      );
       // Set loading to true when starting the operation
       state = true;
 
       dynamic activeSession = await SessionManager().get("activeSession");
 
-      String sessionId = await _sessionRepository.createNewSession();
+      String sessionId =
+          await _sessionRepository.createNewSession(sessionModel);
 
       // Set loading to false after the operation completes
       state = false;
@@ -240,6 +251,101 @@ class SessionController extends StateNotifier<bool> {
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching users in session: $e");
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> leaveSession(String sessionId, String userEmail) async {
+    try {
+      // Set loading to true when starting the operation
+      state = true;
+
+      // Call the repository function to leave the session with the user's email
+      await _sessionRepository.leaveSession(sessionId, userEmail);
+
+      // Perform actions to leave the session (if needed)
+      if (kDebugMode) {
+        print('Successfully left session with ID: $sessionId');
+      }
+      Fluttertoast.showToast(
+          msg: "Successfully left the session",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 5,
+          backgroundColor: const Color(0xFF5A5A5A),
+          fontSize: 16.0);
+
+      // Set loading to false after the operation completes
+      state = false;
+    } catch (e) {
+      state = false;
+      if (kDebugMode) {
+        print('Error leaving session: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Function to get owner ID
+  Future<String?> getOwnerId(String sessionId) async {
+    try {
+      // Set loading to true when starting the operation
+      state = true;
+
+      // Call the repository function to get the owner ID
+      String? ownerId = await _sessionRepository.getOwnerId(sessionId);
+
+      // Set loading to false after the operation completes
+      state = false;
+
+      // Return the owner ID
+      return ownerId;
+    } catch (e) {
+      state = false;
+      if (kDebugMode) {
+        print('Error getting owner ID: $e');
+      }
+      rethrow;
+    }
+  }
+
+  final ownerIdProvider = FutureProvider<String?>((ref) async {
+    final sessionRepository = ref.read(sessionRepositoryProvider);
+    final sessionId = ref.read(sessionIdProvider);
+
+    // Perform the asynchronous operation
+    try {
+      final ownerId = await sessionRepository.getOwnerId(sessionId!);
+      return ownerId;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting owner ID: $e');
+      }
+      // Optionally, you can rethrow the error or return a default value.
+      return null;
+    }
+  });
+
+  // Function to get session details from session ID
+  Future<Session?> getSessionDetails(String sessionId) async {
+    try {
+      // Set loading to true when starting the operation
+      state = true;
+
+      // Call the repository function to get the session details
+      Session? sessionDetails =
+          await _sessionRepository.getSessionDetails(sessionId);
+
+      // Set loading to false after the operation completes
+      state = false;
+
+      // Return the session details
+      return sessionDetails;
+    } catch (e) {
+      state = false;
+      if (kDebugMode) {
+        print('Error getting session details: $e');
       }
       rethrow;
     }

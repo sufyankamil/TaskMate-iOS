@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../common/constants.dart';
 import '../../model/session_model.dart';
+import '../../model/session_task_model.dart';
 
 final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
   return SessionRepository(
@@ -28,32 +29,23 @@ class SessionRepository {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<String> createNewSession() async {
+  Future<String> createNewSession(Session sessionModel) async {
     try {
       User? user = _auth.currentUser;
-
-      final id = const Uuid().v4();
 
       if (user == null) {
         throw Exception("User not authenticated");
       }
 
       // Create a new session document in Firestore
-      DocumentReference sessionRef = await _userSession.add({
-        'id': id,
-        'ownerId': user.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-        'endedAt': null,
-        'tasks': [],
-        'usersJoined': [],
-      });
+      DocumentReference sessionRef = await _userSession.add(sessionModel.toMap());
 
       return sessionRef.id; // Return the session ID
     } catch (e) {
       if (kDebugMode) {
         print("Error creating new session: $e");
       }
-      rethrow; // Rethrow the exception to handle it at the calling site
+      rethrow; 
     }
   }
 
@@ -197,6 +189,63 @@ class SessionRepository {
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching users in session: $e");
+      }
+      rethrow;
+    }
+  }
+
+  // Function to leave the session
+  Future<void> leaveSession(String sessionId, String userEmail) async {
+    try {
+      // Get the reference to the session document
+      DocumentReference sessionDocRef = _userSession.doc(sessionId);
+
+      // Remove the user's email from the 'usersJoined' field
+      await sessionDocRef.update({
+        'usersJoined': FieldValue.arrayRemove([userEmail]),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error leaving session: $e");
+      }
+      rethrow;
+    }
+  }
+
+  // Function to get the owner id fromm session
+  Future<String?> getOwnerId(String sessionId) async {
+    try {
+      DocumentSnapshot sessionSnapshot =
+          await _userSession.doc(sessionId).get();
+
+      if (sessionSnapshot.exists) {
+        return sessionSnapshot['ownerId'];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting owner id: $e");
+      }
+      rethrow;
+    }
+  }
+
+  // Function to fetch the session details from session ID
+  Future<Session?> getSessionDetails(String sessionId) async {
+    try {
+      DocumentSnapshot sessionSnapshot =
+          await _userSession.doc(sessionId).get();
+
+      if (sessionSnapshot.exists) {
+        return Session.fromMap(
+            sessionSnapshot.data() as Map<String, dynamic>);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting session details: $e");
       }
       rethrow;
     }

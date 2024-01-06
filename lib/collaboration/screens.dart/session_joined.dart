@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +8,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
+import '../../auth/controller/auth_controller.dart';
+import '../../model/session_model.dart';
 import '../controller/session_controller.dart';
+import '../repository/session_repository.dart';
 
 class SessionJoined extends ConsumerStatefulWidget {
   final String sessionId;
@@ -24,12 +29,71 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     Routemaster.of(context).push('/');
   }
 
+  List<String> usersList = [];
+
+  String? ownerId = '';
+
+  Future<void> fetchOwnerId() async {
+    final sessionController = ref.watch(sessionControllerProvider.notifier);
+
+    ownerId = await sessionController.getOwnerId(widget.sessionId);
+  }
+
+  final ownerIdProvider = FutureProvider<String?>((ref) async {
+    final sessionRepository = ref.read(sessionRepositoryProvider);
+    final sessionId = ref.read(sessionIdProvider);
+
+    // Perform the asynchronous operation
+    try {
+      final ownerId = await sessionRepository.getOwnerId(sessionId!);
+      return ownerId;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting owner ID: $e');
+      }
+      // Optionally, you can rethrow the error or return a default value.
+      return null;
+    }
+  });
+
+  // Function to fetch session details
+  Future<void> fetchSessionDetails() async {
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      final sessionController = ref.watch(sessionControllerProvider.notifier);
+      Session? sessionDetails =
+          await sessionController.getSessionDetails(widget.sessionId);
+
+      if (sessionDetails != null) {
+        ownerId = sessionDetails.ownerId;
+      }
+    });
+  }
+
+  void showSuccessMessage() {
+    Fluttertoast.showToast(
+      msg: 'Session joined successfully',
+      backgroundColor: Colors.green,
+      timeInSecForIosWeb: 4,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSessionDetails();
+    showSuccessMessage();
+  }
+
   @override
   Widget build(BuildContext context) {
     final sessionController = ref.watch(sessionControllerProvider.notifier);
 
     final Stream<List<String>> sessions =
         sessionController.fetchUsersInSession(widget.sessionId);
+
+    final userId = ref.read(userProvider)?.uid ?? '';
+
+    final isOwner = ownerId == userId;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,10 +122,15 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                         onPressed: () {
                           endSessionMethod(context);
                         },
-                        child: const Text(
-                          'End Session',
-                          style: TextStyle(color: Colors.red),
-                        ),
+                        child: isOwner
+                            ? const Text(
+                                'End Session',
+                                style: TextStyle(color: Colors.red),
+                              )
+                            : const Text(
+                                'Leave Session',
+                                style: TextStyle(color: Colors.red),
+                              ),
                       ),
                     ],
                   ),
@@ -104,6 +173,11 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                 } else {
                   final List<String> users = snapshot.data ?? [];
                   final int userCount = users.length;
+                  Future.delayed(Duration.zero, () {
+                    setState(() {
+                      usersList = snapshot.data ?? [];
+                    });
+                  });
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -175,13 +249,23 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     );
   }
 
-  Future<dynamic> endSessionMethod(BuildContext context) {
+  Future<dynamic> endSessionMethod(
+    BuildContext context,
+  ) async {
     final sessionController = ref.watch(sessionControllerProvider.notifier);
+
+    // ownerId = await sessionController.getOwnerId(widget.sessionId);
+
+    // final userId = ref.read(userProvider)?.uid ?? '';
+
+    // final isOwner = ownerId == userId;
+
+    // ignore: use_build_context_synchronously
     return showPlatformDialog(
       context: context,
       builder: (_) => BasicDialogAlert(
-        title: const Text('End Session'),
-        content: const Text('Are you sure you want to end the session?'),
+        title: const Text('Leave Session'),
+        content: const Text('Are you sure you want to leave the session?'),
         actions: [
           BasicDialogAction(
             title: const Text('Cancel'),
@@ -190,16 +274,58 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
             },
           ),
           BasicDialogAction(
-            title: const Text('End Session'),
+            title: const Text('Leave Session'),
             onPressed: () {
               sessionController.endSession();
               Navigator.pop(context);
               Navigator.pop(context);
+              Fluttertoast.showToast(
+                msg: 'Session left successfully',
+                backgroundColor: Colors.green,
+              );
               navigateToSessionCreation();
             },
           ),
         ],
       ),
     );
+  }
+
+  Future<dynamic> leaveSessionMethod(
+      BuildContext context, int userIndex) async {
+    final sessionController = ref.watch(sessionControllerProvider.notifier);
+
+    ownerId = await sessionController.getOwnerId(widget.sessionId);
+
+    final userId = ref.read(userProvider)?.uid ?? '';
+
+    final isOwner = ownerId == userId;
+
+    void leaveSessionForCurrentUser(int userIndex) async {
+      final sessionController = ref.watch(sessionControllerProvider.notifier);
+      final String? currentUserUid = ref.read(userProvider)?.uid;
+
+      if (currentUserUid != null) {
+        await sessionController.leaveSession(widget.sessionId, currentUserUid);
+        Navigator.pop(context);
+        Navigator.pop(context);
+        navigateToSessionCreation();
+      } else {
+        // Handle the case where the current user's UID is null
+        print("Current user UID is null");
+      }
+    }
+
+    // Check if the user is the owner
+    if (isOwner) {
+      // Perform actions for the owner (e.g., end session)
+      sessionController.endSession();
+      Navigator.pop(context);
+      Navigator.pop(context);
+      navigateToSessionCreation();
+    } else {
+      // Perform actions for non-owner (e.g., leave session)
+      leaveSessionForCurrentUser(userIndex);
+    }
   }
 }

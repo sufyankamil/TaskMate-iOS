@@ -1,39 +1,54 @@
-class SessionTasks{
-  final String id;
-  final String ownerId; // user id(uid)
-  final String title;
-  final String description;
-  final String date;
-  final String time;
-  final String status;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  const SessionTasks({
+import 'session_todo_model.dart';
+
+class Session {
+  final String id;
+  final String ownerId;
+  final Timestamp createdAt;
+  final String endedAt;
+  final List<SessionTodo> tasks;
+  final List<String> usersJoined;
+
+  const Session({
     required this.id,
     required this.ownerId,
-    required this.title,
-    required this.description,
-    required this.date,
-    required this.time,
-    required this.status,
+    required this.createdAt,
+     this.endedAt = '',
+    this.tasks = const [],
+    this.usersJoined = const [],
   });
 
-  SessionTasks copyWith({
+  Session copyWith({
     String? id,
     String? ownerId,
-    String? title,
-    String? description,
-    String? date,
-    String? time,
-    String? status,
+    Timestamp? createdAt,
+    String? endedAt,
+    List<SessionTodo>? tasks,
+    List<String>? usersJoined,
   }) {
-    return SessionTasks(
+    return Session(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      date: date ?? this.date,
-      time: time ?? this.time,
-      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      endedAt: endedAt ?? this.endedAt,
+      tasks: tasks ?? this.tasks,
+      usersJoined: usersJoined ?? this.usersJoined,
+    );
+  }
+
+  factory Session.fromMap(Map<String, dynamic> map) {
+    return Session(
+      id: map['id'],
+      ownerId: map['ownerId'],
+      createdAt: map['createdAt'],
+      endedAt: map['endedAt'],
+      tasks: List<SessionTodo>.from(
+        map['todos']?.map(
+          (x) => SessionTodo.fromMap(x),
+        ),
+      ),
+      usersJoined: List<String>.from(map['usersJoined']),
     );
   }
 
@@ -41,53 +56,38 @@ class SessionTasks{
     return {
       'id': id,
       'ownerId': ownerId,
-      'title': title,
-      'description': description,
-      'date': date,
-      'time': time,
-      'status': status,
+      'createdAt': createdAt,
+      'endedAt': endedAt,
+      'todos': tasks.map((x) => x.toMap()).toList(),
+      'usersJoined': usersJoined,
     };
   }
 
-  factory SessionTasks.fromMap(Map<String, dynamic> map) {
-    return SessionTasks(
-      id: map['id'],
-      ownerId: map['ownerId'],
-      title: map['title'],
-      description: map['description'],
-      date: map['date'],
-      time: map['time'],
-      status: map['status'],
-    );
-  }
-
-    @override
+  @override
   String toString() {
-    return 'SessionTasks(id: $id, ownerId: $ownerId, title: $title, description: $description, date: $date, time: $time, status: $status)';
+    return 'Session(id: $id, ownerId: $ownerId, createdAt: $createdAt, endedAt: $endedAt, tasks: $tasks, usersJoined: $usersJoined)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
-    return other is SessionTasks &&
-      other.id == id &&
-      other.ownerId == ownerId &&
-      other.title == title &&
-      other.description == description &&
-      other.date == date &&
-      other.time == time &&
-      other.status == status;
+
+    return other is Session &&
+        other.id == id &&
+        other.ownerId == ownerId &&
+        other.createdAt == createdAt &&
+        other.endedAt == endedAt &&
+        other.tasks == tasks &&
+        other.usersJoined == usersJoined;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      ownerId.hashCode ^
-      title.hashCode ^
-      description.hashCode ^
-      date.hashCode ^
-      time.hashCode ^
-      status.hashCode;
+        ownerId.hashCode ^
+        createdAt.hashCode ^
+        endedAt.hashCode ^
+        tasks.hashCode ^
+        usersJoined.hashCode;
   }
 }
