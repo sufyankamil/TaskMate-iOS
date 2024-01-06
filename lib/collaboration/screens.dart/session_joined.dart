@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:task_mate/core/utils/extensions.dart';
 
 import '../controller/session_controller.dart';
 
@@ -39,17 +41,30 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Session ID',
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                  Row(
+                    children: [
+                      Text(
+                        'Session ID',
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 5.0.widthPercent),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          endSessionMethod(context);
+                        },
+                        child: const Text(
+                          'End Session',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
                   ),
                   ListTile(
                     title: Text(
                       widget.sessionId,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(
+                          color: Colors.white, fontSize: 3.0.widthPercent),
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.copy),
@@ -63,70 +78,18 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                       },
                     ),
                   ),
-                  // show number of users joined
-                  StreamBuilder<List<String>>(
-                    stream: sessions,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        Fluttertoast.showToast(
-                          msg: 'Error getting users in session',
-                          backgroundColor: Colors.red,
-                        );
-                        return const Text('Error');
-                      } else {
-                        final List<String> users = snapshot.data ?? [];
-                        final int userCount = users.length;
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text('Total Users Joined: $userCount'),
-                            if (userCount == 0)
-                              const Text('No users in session'),
-                          ],
-                        );
-                      }
-                    },
-                  )
+                  countNumberOfUsers(sessions)
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("Session Joined"),
-            const SizedBox(height: 20),
-
-            // Display the list of users who have joined the session
-            // Consumer(
-            //   builder: (context, watch, child) {
-            //     final sessionController =
-            //         ref.watch(sessionControllerProvider.notifier);
-
-            //     final sessions = sessionController.fetchUsersInSession('');
-
-            //     return sessions.when(
-            //       data: (data) {
-            //         return ListView.builder(
-            //           shrinkWrap: true,
-            //           itemCount: data.length,
-            //           itemBuilder: (context, index) {
-            //             return ListTile(
-            //               title: Text(data[index]),
-            //             );
-            //           },
-            //         );
-            //       },
-            //       loading: () => const CircularProgressIndicator(),
-            //       error: (error, stack) => const Text('Error'),
-            //     );
-            //   },
-            // ),
-
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Users in Session',
+                style:
+                    TextStyle(color: Colors.white, fontSize: 5.0.widthPercent),
+              ),
+            ),
             StreamBuilder<List<String>>(
               stream: sessions,
               builder: (context, snapshot) {
@@ -140,15 +103,23 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text('Total Users Joined: $userCount'),
-                      const SizedBox(height: 10),
                       if (userCount > 0)
                         ListView.builder(
                           shrinkWrap: true,
                           itemCount: userCount,
                           itemBuilder: (context, index) {
-                            return ListTile(
-                              title: Text(users[index]),
+                            return Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircleAvatar(
+                                    radius: 20,
+                                    child: Text('${index + 1}'),
+                                  ),
+                                ),
+                                SizedBox(width: 8.0.widthPercent),
+                                Text(users[index]),
+                              ],
                             );
                           },
                         ),
@@ -160,6 +131,71 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
             ),
           ],
         ),
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Session Joined"),
+            SizedBox(height: 20),
+
+            // Display the list of users who have joined the session
+          ],
+        ),
+      ),
+    );
+  }
+
+  StreamBuilder<List<String>> countNumberOfUsers(
+      Stream<List<String>> sessions) {
+    return StreamBuilder<List<String>>(
+      stream: sessions,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          Fluttertoast.showToast(
+            msg: 'Error getting users in session',
+            backgroundColor: Colors.red,
+          );
+          return const Text('Error');
+        } else {
+          final List<String> users = snapshot.data ?? [];
+          final int userCount = users.length;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Total Users Joined: $userCount'),
+              if (userCount == 0) const Text('No users in session'),
+            ],
+          );
+        }
+      },
+    );
+  }
+
+  Future<dynamic> endSessionMethod(BuildContext context) {
+    return showPlatformDialog(
+      context: context,
+      builder: (_) => BasicDialogAlert(
+        title: const Text('End Session'),
+        content: const Text('Are you sure you want to end the session?'),
+        actions: [
+          BasicDialogAction(
+            title: const Text('Cancel'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          BasicDialogAction(
+            title: const Text('End Session'),
+            onPressed: () {
+              // sessionController.endSession(
+              //     widget.sessionId);
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
     );
   }
