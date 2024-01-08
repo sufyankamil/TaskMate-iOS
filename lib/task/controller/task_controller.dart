@@ -122,7 +122,9 @@ class TaskController extends StateNotifier<bool> {
       }
     } catch (e) {
       state = false;
-      print('Error in addTask: $e');
+      if (kDebugMode) {
+        print('Error in addTask: $e');
+      }
     }
   }
 
@@ -151,8 +153,16 @@ class TaskController extends StateNotifier<bool> {
         isDone: false,
       );
 
+      print('Document found above: ${tasks.id}');
+
+      print(newSubTask.toMap());
+
       // Add the new subtask to the existing todos list
       tasks = tasks.copyWith(todos: [...tasks.todos, newSubTask]);
+
+      print('-------');
+
+      print(tasks);
 
       // Update the document in Firestore
       await _taskRepository.updateTasksWithSubTask(tasks, subTaskTitle);
@@ -215,7 +225,7 @@ class TaskController extends StateNotifier<bool> {
     );
   }
 
-Future<void> deleteSubtaskById(String taskId, String subtaskId) async {
+  Future<void> deleteSubtaskById(String taskId, String subtaskId) async {
     final result = await _taskRepository.deleteSubtaskById(taskId, subtaskId);
 
     result.fold(
@@ -223,8 +233,6 @@ Future<void> deleteSubtaskById(String taskId, String subtaskId) async {
       (_) => Fluttertoast.showToast(msg: 'Sub Task Deleted Successfully'),
     );
   }
-
-
 
   @override
   void dispose() {

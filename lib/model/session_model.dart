@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'session_todo_model.dart';
 
 class Session {
   final String id;
   final String ownerId;
-  final Timestamp createdAt;
+  final DateTime createdAt;
   final String endedAt;
   final List<SessionTodo> tasks;
   final List<String> usersJoined;
@@ -14,7 +12,7 @@ class Session {
     required this.id,
     required this.ownerId,
     required this.createdAt,
-     this.endedAt = '',
+    this.endedAt = '',
     this.tasks = const [],
     this.usersJoined = const [],
   });
@@ -22,7 +20,6 @@ class Session {
   Session copyWith({
     String? id,
     String? ownerId,
-    Timestamp? createdAt,
     String? endedAt,
     List<SessionTodo>? tasks,
     List<String>? usersJoined,
@@ -30,7 +27,7 @@ class Session {
     return Session(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
-      createdAt: createdAt ?? this.createdAt,
+      createdAt: createdAt,
       endedAt: endedAt ?? this.endedAt,
       tasks: tasks ?? this.tasks,
       usersJoined: usersJoined ?? this.usersJoined,
@@ -41,7 +38,7 @@ class Session {
     return Session(
       id: map['id'],
       ownerId: map['ownerId'],
-      createdAt: map['createdAt'],
+      createdAt: map['createdAt'].toDate(),
       endedAt: map['endedAt'],
       tasks: List<SessionTodo>.from(
         map['todos']?.map(

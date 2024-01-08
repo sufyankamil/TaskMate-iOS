@@ -7,9 +7,12 @@ import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/collaboration/repository/session_repository.dart';
 import 'package:task_mate/model/session_model.dart';
+import 'package:task_mate/model/session_todo_model.dart';
+import 'package:task_mate/provider/failure.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/session_task_model.dart';
 
@@ -21,21 +24,6 @@ final sessionControllerProvider =
     sessionRepository: sessionRepository,
   );
 });
-
-// final sessionIdProvider = StateProvider<String?>((ref) => null);
-
-// final usersInSessionProvider = StreamProvider<List<String>>((ref) {
-//   final sessionId = ref.watch(sessionIdProvider);
-//   final sessionRepository = ref.watch(sessionRepositoryProvider);
-
-//   print(sessionId);
-//   print(sessionRepository);
-
-//   // Return the stream of users who have joined the session
-//   return sessionId != null
-//       ? sessionRepository.getUsersInSession(sessionId)
-//       : Stream.value([]); // Return an empty list if the session ID is null
-// });
 
 class SessionIdController extends StateNotifier<String?> {
   SessionIdController() : super(null);
@@ -72,16 +60,19 @@ class SessionController extends StateNotifier<bool> {
 
   Future<String> createNewSession(BuildContext context) async {
     try {
-      final id = const Uuid().v4();
+      final id = const Uuid().v1();
       // Create a new session model
       Session sessionModel = Session(
         id: id,
         ownerId: _ref.read(userProvider)?.uid ?? '',
-        createdAt: Timestamp.now(),
+        createdAt: DateTime.now(),
         endedAt: '',
-        tasks: [],
         usersJoined: [],
       );
+
+      if (kDebugMode) {
+        print(sessionModel.toMap());
+      }
       // Set loading to true when starting the operation
       state = true;
 
@@ -188,47 +179,112 @@ class SessionController extends StateNotifier<bool> {
     }
   }
 
-  Future<void> addTaskToSession({
-    required String title,
-    required String description,
-    required String date,
-    required String time,
-    required String status,
-  }) async {
-    state = true;
-
+  Future<Either<Failure, void>> updateSessionTask(
+    Session session,
+    String title,
+    String description,
+    String date,
+    String time,
+    String status,
+    String sessionId,
+  ) async {
     try {
-      // Use a valid sessionId (replace this with your logic)
-      String sessionId = const Uuid().v4();
-
-      final uid = _ref.read(userProvider)?.uid ?? '';
-
-      final SessionTasks sessionTasks = SessionTasks(
-        id: sessionId,
-        ownerId: uid,
+      // Create a new Session Todo to the existing task list
+      SessionTodo newSessionTask = SessionTodo(
+        id: const Uuid().v1(),
+        uid: _ref.read(userProvider)?.uid ?? '',
         title: title,
         description: description,
         date: date,
         time: time,
         status: status,
+        isPending: true,
+        isCompleted: false,
       );
 
-      // Ensure sessionId is not null or empty before calling addTaskToSession
-      if (sessionId.isNotEmpty) {
-        await _sessionRepository.addTaskToSession(sessionId, sessionTasks);
-      } else {
-        throw Exception("Invalid sessionId");
+      if (kDebugMode) {
+        print(newSessionTask.toMap());
       }
 
-      state = false;
+      // Add the new task to the existing task list
+      session = session.copyWith(tasks: [...session.tasks, newSessionTask]);
+
+      print('---------------.>');
+
+      print(session);
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Update the document in Firestore
+      await _sessionRepository.updateTaskToSession(
+          session, title, description, date, time, status, sessionId);
+
+      Fluttertoast.showToast(msg: 'Task Added Successfully');
+
+      // return a success message
+      return right(unit);
+    } on FirebaseException catch (e) {
+      // Handle Firebase exceptions
+      return left(Failure(e.message!));
     } catch (e) {
-      if (kDebugMode) {
-        print("Error adding task to session: $e");
-      }
-      // Handle error or rethrow as needed
-      // rethrow;
+      // Handle other exceptions
+      return left(Failure(e.toString()));
     }
   }
+
+  // Future<void> addTaskToSession({
+  //   required String title,
+  //   required String description,
+  //   required String date,
+  //   required String time,
+  //   required String status,
+  // }) async {
+  //   state = true;
+
+  //   try {
+  //     // Use a valid sessionId
+  //     String sessionId = const Uuid().v4();
+
+  //     final uid = _ref.read(userProvider)?.uid ?? '';
+
+  //     final SessionTodo sessionTasks = SessionTodo(
+  //       id: sessionId,
+  //       uid: uid,
+  //       title: title,
+  //       description: description,
+  //       date: date,
+  //       time: time,
+  //       status: status,
+  //       isPending: true,
+  //       isCompleted: false,
+  //     );
+
+  //     // Ensure sessionId is not null or empty before calling addTaskToSession
+  //     if (sessionId.isNotEmpty) {
+  //       final result =
+  //           await _sessionRepository.addTaskToSession(sessionId, sessionTasks);
+
+  //       state = false;
+
+  //       result.fold(
+  //         (failure) => Fluttertoast.showToast(msg: failure.message),
+  //         (_) {
+  //           Fluttertoast.showToast(msg: 'Task Added in Session Successfully');
+  //           // Routemaster.of(context).pop();
+  //         },
+  //       );
+  //     } else {
+  //       Fluttertoast.showToast(msg: 'Invalid Session ID');
+  //     }
+  //   } catch (e) {
+  //     state = false;
+  //     if (kDebugMode) {
+  //       print("Error adding task to session: $e");
+  //     }
+  //     // Handle error or rethrow as needed
+  //     // rethrow;
+  //   }
+  // }
 
   void fetchSessionTasks(String sessionId) {
     try {

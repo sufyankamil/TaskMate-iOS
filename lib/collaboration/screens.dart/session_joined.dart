@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -5,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
@@ -97,9 +100,14 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("Session Joined"),
-      ),
+          automaticallyImplyLeading: false,
+          title: const Text("Session Started"),
+          leading: IconButton(
+            icon: const Icon(FontAwesomeIcons.plus),
+            onPressed: () {
+              addSessionTask(context, ref);
+            },
+          )),
       endDrawer: Drawer(
         child: ListView(
           children: [
@@ -327,5 +335,174 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
       // Perform actions for non-owner (e.g., leave session)
       leaveSessionForCurrentUser(userIndex);
     }
+  }
+
+  void addSessionTask(BuildContext context, WidgetRef ref) {
+    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+    TextEditingController titleController = TextEditingController();
+
+    TextEditingController descriptionController = TextEditingController();
+
+    String? _errorText1 = "Please enter a task title";
+
+    String? _errorText2 = "Please enter a task Description";
+
+    String? formattedDate = '';
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext builder) {
+        return CupertinoPopupSurface(
+          child: Form(
+            key: _formKey,
+            child: Container(
+              color: Colors.transparent,
+              width: double.infinity,
+              height: 200.0.widthPercent,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'Add Task to Session',
+                    style: TextStyle(
+                      fontFamily: 'MyFont',
+                      fontSize: 7.0.widthPercent,
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  CupertinoTextFormFieldRow(
+                    controller: titleController,
+                    placeholder: 'Task Title',
+                    padding: const EdgeInsets.all(12.0),
+                    placeholderStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey,
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a task title';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      titleController.text = value;
+                      setState(() {
+                        _errorText1 = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  CupertinoTextFormFieldRow(
+                    controller: descriptionController,
+                    placeholder: 'Task Description',
+                    keyboardType: TextInputType.multiline,
+                    padding: const EdgeInsets.all(12.0),
+                    placeholderStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey,
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a task description';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      setState(() {
+                        _errorText2 = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Container(
+                        color: Colors.transparent,
+                        height: 50.0.widthPercent,
+                        width: 100.0.widthPercent,
+                        child: CupertinoDatePicker(
+                          mode: CupertinoDatePickerMode.date,
+                          initialDateTime: DateTime.now(),
+                          onDateTimeChanged: (DateTime newDateTime) {
+                            formattedDate =
+                                DateFormat('dd-MM-yyyy').format(newDateTime);
+                            print(formattedDate);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  CupertinoButton.filled(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        final sessionController =
+                            ref.watch(sessionControllerProvider.notifier);
+
+                        Session? sessionDetails = await sessionController
+                            .getSessionDetails(widget.sessionId);
+
+
+                        final result = sessionController.updateSessionTask(
+                          sessionDetails!,
+                          titleController.text.trim(),
+                          descriptionController.text.trim(),
+                          formattedDate!,
+                          '',
+                          'Pending',
+                          widget.sessionId,
+                        );
+                        print(result);
+                      }
+                    },
+                    child: const Text('Submit'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    sessionIdController.dispose();
   }
 }

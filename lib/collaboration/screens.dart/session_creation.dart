@@ -281,6 +281,7 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
                 String userEmail = emailTextController.text;
 
                 if (sessionId.isNotEmpty && userEmail.isNotEmpty) {
+                  print('Session ID: $sessionId');
                   bool result =
                       await sessionController.joinSession(sessionId, userEmail);
 

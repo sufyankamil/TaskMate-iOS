@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:task_mate/provider/providers.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../common/constants.dart';
 import '../../model/session_model.dart';
 import '../../model/session_task_model.dart';
+import '../../provider/failure.dart';
 
 final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
   return SessionRepository(
@@ -38,14 +40,15 @@ class SessionRepository {
       }
 
       // Create a new session document in Firestore
-      DocumentReference sessionRef = await _userSession.add(sessionModel.toMap());
+      DocumentReference sessionRef =
+          await _userSession.add(sessionModel.toMap());
 
       return sessionRef.id; // Return the session ID
     } catch (e) {
       if (kDebugMode) {
         print("Error creating new session: $e");
       }
-      rethrow; 
+      rethrow;
     }
   }
 
@@ -108,16 +111,40 @@ class SessionRepository {
     }
   }
 
-  Future<void> addTaskToSession(String sessionId, SessionTasks task) async {
+  Future<void> updateTaskToSession(
+    Session session,
+    String title,
+    String description,
+    String date,
+    String time,
+    String status,
+    String sessionId, 
+  ) async {
     try {
+      // Update the document in Firestore
       await _userSession.doc(sessionId).update({
-        'tasks': FieldValue.arrayUnion([task.toMap()]),
+        'todos': session.tasks.map((e) => e.toMap()).toList(),
       });
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error adding task to session: $e");
+    } on FirebaseException catch (e) {
+      if (e.code == 'not-found') {
+        // Handle document not found exception
+        if (kDebugMode) {
+          print('Document not found: ${session.id}');
+        }
+        Fluttertoast.showToast(msg: 'Document not found');
+      } else {
+        // Handle other exceptions
+        if (kDebugMode) {
+          print('Error updating task to session: $e');
+        }
+        Fluttertoast.showToast(msg: e.toString());
       }
-      rethrow;
+    } catch (e) {
+      // Handle other exceptions
+      if (kDebugMode) {
+        print('Error updating task to session: $e');
+      }
+      Fluttertoast.showToast(msg: e.toString());
     }
   }
 
@@ -238,14 +265,31 @@ class SessionRepository {
           await _userSession.doc(sessionId).get();
 
       if (sessionSnapshot.exists) {
-        return Session.fromMap(
-            sessionSnapshot.data() as Map<String, dynamic>);
+        return Session.fromMap(sessionSnapshot.data() as Map<String, dynamic>);
       } else {
         return null;
       }
     } catch (e) {
       if (kDebugMode) {
         print("Error getting session details: $e");
+      }
+      rethrow;
+    }
+  }
+
+  // Function to start the timer as soon as the user joined the session
+  Future<void> startTimer(String sessionId) async {
+    try {
+      // Get the reference to the session document
+      DocumentReference sessionDocRef = _userSession.doc(sessionId);
+
+      // Update the 'startedAt' field with the current timestamp
+      await sessionDocRef.update({
+        'startedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error starting timer: $e");
       }
       rethrow;
     }

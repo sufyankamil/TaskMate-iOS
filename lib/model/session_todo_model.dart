@@ -15,7 +15,7 @@ class SessionTodo {
     required this.title,
     required this.description,
     required this.date,
-    required this.time,
+    this.time = '',
     required this.status,
     required this.uid,
     required this.isPending,
