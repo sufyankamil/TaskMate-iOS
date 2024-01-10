@@ -10,11 +10,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
+import 'package:task_mate/theme/pallete.dart';
 
 import '../../auth/controller/auth_controller.dart';
 import '../../model/session_model.dart';
 import '../controller/session_controller.dart';
 import '../repository/session_repository.dart';
+import 'showing_session_tasks.dart';
 
 class SessionJoined extends ConsumerStatefulWidget {
   final String sessionId;
@@ -80,15 +82,23 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     );
   }
 
+  fetchSessionWithTask() {
+    final sessionController = ref.watch(sessionControllerProvider.notifier);
+    return sessionController.fetchSessionWithTask();
+  }
+
   @override
   void initState() {
     super.initState();
     fetchSessionDetails();
     showSuccessMessage();
+    fetchSessionWithTask();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentTheme = ref.watch(themeNotifierProvider);
+
     final sessionController = ref.watch(sessionControllerProvider.notifier);
 
     final Stream<List<String>> sessions =
@@ -97,6 +107,43 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     final userId = ref.read(userProvider)?.uid ?? '';
 
     final isOwner = ownerId == userId;
+
+    final squreWidth = MediaQuery.of(context).size.width - 10.0.widthPercent;
+
+    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
+
+    bool isDarkTheme = themeNotifier.isDark;
+
+    final sessionControl = ref.watch(sessionControllerProvider.notifier);
+
+    GlobalKey<RefreshIndicatorState> refreshKey =
+        GlobalKey<RefreshIndicatorState>();
+
+    final usersSessionTask = ref.watch(userSessionTask);
+
+    final sessionTodos = usersSessionTask.when(
+      data: (data) {
+        print('Data: $data');
+        return data;
+            },
+      loading: () => const Center(
+        child: CircularProgressIndicator.adaptive(),
+      ),
+      error: (error, stack) {
+        print('Error: $error');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+              child: Text('Error: $error'),
+            ),
+          ],
+        );
+      },
+    );
+
+    print('Outside usersSessionTask: $sessionTodos');
+
 
     return Scaffold(
       appBar: AppBar(
@@ -219,12 +266,67 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
           ],
         ),
       ),
-      body: const Center(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          refreshKey.currentState?.show();
+          // return Future.delayed(const Duration(seconds: 2));
+        },
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Session Joined"),
-            SizedBox(height: 20),
+             sessionTodos is List && sessionTodos.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 100),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        'No task found in this Session, Start adding task so that you don\'t forget your important task',
+                        style: TextStyle(
+                          color: currentTheme.brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          fontSize: 20,
+                        ),
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                      ),
+                    ),
+                  )
+                :
+            ref.watch(userSessionTask).when(
+                  data: (data) => Expanded(
+                    child: SingleChildScrollView(
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        children: [
+                          ...data.map(
+                            (session) => LongPressDraggable(
+                              data: session.tasks.isNotEmpty ? session.tasks[0] : null,
+                              feedback: Opacity(
+                                opacity: 0.8,
+                                child: ShowSessionTasks(sessionTodo: session.tasks.isNotEmpty ? session.tasks[0] : null),
+                              ),
+                              child: ShowSessionTasks(sessionTodo: session.tasks.isNotEmpty ? session.tasks[0] : null),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  ),
+                  error: (error, stack) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: Text('Error: $error'),
+                      ),
+                    ],
+                  ),
+                ),
           ],
         ),
       ),
@@ -350,6 +452,49 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
 
     String? formattedDate = '';
 
+    DateTime selectedDate = DateTime.now();
+
+    TimeOfDay selectedTime = TimeOfDay.now();
+
+    Future<void> _selectDate(BuildContext context) async {
+      final DateTime? pickedDate = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2101),
+      );
+
+      if (pickedDate != null && pickedDate != selectedDate) {
+        setState(() {
+          selectedDate = pickedDate;
+          formattedDate = DateFormat('dd-MM-yyyy').format(selectedDate);
+        });
+      }
+    }
+
+    // Convert TimeOfDay to DateTime for formatting
+    DateTime dateTime = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+
+    Future<void> _selectTime(BuildContext context) async {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: selectedTime,
+      );
+
+      if (pickedTime != null && pickedTime != selectedTime) {
+        setState(() {
+          selectedTime = pickedTime;
+          DateFormat('h:mm a').format(dateTime);
+        });
+      }
+    }
+
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext builder) {
@@ -392,35 +537,14 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  CupertinoTextFormFieldRow(
-                    controller: titleController,
-                    placeholder: 'Task Title',
-                    padding: const EdgeInsets.all(12.0),
-                    placeholderStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a task title';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) {
-                      titleController.text = value;
-                      setState(() {
-                        _errorText1 = null;
-                      });
-                    },
-                  ),
+                  titleWidget(titleController, _errorText1),
                   const SizedBox(height: 20),
                   CupertinoTextFormFieldRow(
+                    style: const TextStyle(color: Colors.white),
+                    prefix: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(Icons.description, color: Colors.white),
+                    ),
                     controller: descriptionController,
                     placeholder: 'Task Description',
                     keyboardType: TextInputType.multiline,
@@ -450,53 +574,180 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Container(
-                        color: Colors.transparent,
-                        height: 50.0.widthPercent,
-                        width: 100.0.widthPercent,
-                        child: CupertinoDatePicker(
-                          mode: CupertinoDatePickerMode.date,
-                          initialDateTime: DateTime.now(),
-                          onDateTimeChanged: (DateTime newDateTime) {
-                            formattedDate =
-                                DateFormat('dd-MM-yyyy').format(newDateTime);
-                            print(formattedDate);
+                      Expanded(
+                        child: CupertinoTextFormFieldRow(
+                          style: const TextStyle(color: Colors.white),
+                          prefix: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GestureDetector(
+                                onTap: () => _selectDate(context),
+                                child: const Icon(Icons.date_range,
+                                    color: Colors.white)),
+                          ),
+                          controller: TextEditingController(
+                            text: "$formattedDate",
+                          ),
+                          placeholder: 'Select date',
+                          padding: const EdgeInsets.all(12.0),
+                          placeholderStyle: const TextStyle(
+                            color: Colors.grey,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a valid date';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              _errorText2 = null;
+                            });
                           },
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  CupertinoButton.filled(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        final sessionController =
-                            ref.watch(sessionControllerProvider.notifier);
-
-                        Session? sessionDetails = await sessionController
-                            .getSessionDetails(widget.sessionId);
-
-
-                        final result = sessionController.updateSessionTask(
-                          sessionDetails!,
-                          titleController.text.trim(),
-                          descriptionController.text.trim(),
-                          formattedDate!,
-                          '',
-                          'Pending',
-                          widget.sessionId,
-                        );
-                        print(result);
-                      }
-                    },
-                    child: const Text('Submit'),
-                  ),
+                  timerWidget(_selectTime, context, selectedTime, _errorText2),
+                  const SizedBox(height: 20),
+                  submitButton(
+                      _formKey,
+                      ref,
+                      titleController,
+                      descriptionController,
+                      formattedDate,
+                      selectedTime,
+                      context),
                 ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  CupertinoTextFormFieldRow titleWidget(
+      TextEditingController titleController, String? _errorText1) {
+    return CupertinoTextFormFieldRow(
+      style: const TextStyle(color: Colors.white),
+      prefix: const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Icon(Icons.title, color: Colors.white),
+      ),
+      controller: titleController,
+      placeholder: 'Task Title',
+      padding: const EdgeInsets.all(12.0),
+      placeholderStyle: const TextStyle(
+        color: Colors.grey,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.grey,
+          width: 1.0,
+        ),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a task title';
+        }
+        return null;
+      },
+      onChanged: (value) {
+        titleController.text = value;
+        setState(() {
+          _errorText1 = null;
+        });
+      },
+    );
+  }
+
+  CupertinoButton submitButton(
+      GlobalKey<FormState> _formKey,
+      WidgetRef ref,
+      TextEditingController titleController,
+      TextEditingController descriptionController,
+      String? formattedDate,
+      TimeOfDay selectedTime,
+      BuildContext context) {
+    return CupertinoButton.filled(
+      onPressed: () async {
+        if (_formKey.currentState!.validate()) {
+          final sessionController =
+              ref.watch(sessionControllerProvider.notifier);
+
+          Session? sessionDetails =
+              await sessionController.getSessionDetails(widget.sessionId);
+
+          final result = sessionController.updateSessionTask(
+            sessionDetails!,
+            titleController.text.trim(),
+            descriptionController.text.trim(),
+            formattedDate!,
+            selectedTime.format(context),
+            'Pending',
+            widget.sessionId,
+          );
+
+          titleController.clear();
+          descriptionController.clear();
+
+          Navigator.pop(context);
+        }
+      },
+      child: const Text('Submit'),
+    );
+  }
+
+  Row timerWidget(Future<void> Function(BuildContext context) _selectTime,
+      BuildContext context, TimeOfDay selectedTime, String? _errorText2) {
+    return Row(
+      children: [
+        Expanded(
+          child: CupertinoTextFormFieldRow(
+            prefix: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                    onTap: () => _selectTime(context),
+                    child: const Icon(Icons.timer, color: Colors.white))),
+            style: const TextStyle(color: Colors.white),
+            controller: TextEditingController(
+              text: selectedTime.format(context),
+            ),
+            placeholder: 'Select time',
+            padding: const EdgeInsets.all(12.0),
+            placeholderStyle: const TextStyle(
+              color: Colors.grey,
+            ),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.grey,
+                width: 1.0,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select time';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              setState(() {
+                _errorText2 = null;
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 

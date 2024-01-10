@@ -153,16 +153,8 @@ class TaskController extends StateNotifier<bool> {
         isDone: false,
       );
 
-      print('Document found above: ${tasks.id}');
-
-      print(newSubTask.toMap());
-
       // Add the new subtask to the existing todos list
       tasks = tasks.copyWith(todos: [...tasks.todos, newSubTask]);
-
-      print('-------');
-
-      print(tasks);
 
       // Update the document in Firestore
       await _taskRepository.updateTasksWithSubTask(tasks, subTaskTitle);

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:task_mate/model/session_todo_model.dart';
 import 'package:task_mate/provider/providers.dart';
 
 import '../../common/constants.dart';
@@ -118,7 +119,7 @@ class SessionRepository {
     String date,
     String time,
     String status,
-    String sessionId, 
+    String sessionId,
   ) async {
     try {
       // Update the document in Firestore
@@ -290,6 +291,53 @@ class SessionRepository {
     } catch (e) {
       if (kDebugMode) {
         print("Error starting timer: $e");
+      }
+      rethrow;
+    }
+  }
+
+  Stream<List<Session>> fetchSessionWithTask(String ownerId) {
+    print('Fetching session for user: $ownerId');
+    return _userSession
+        .where('ownerId', isEqualTo: ownerId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .asyncMap<List<Session>>((snapshot) async {
+      try {
+        final session = snapshot.docs
+            .map((doc) =>
+                Session.fromMap(doc.data() as Map<String, dynamic>))
+            .toList();
+        return session;
+      } catch (e) {
+        // Handle errors and return an empty list in case of an error
+        print('Error in mapping session: $e');
+        return [];
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getSessionTodos(String sessionId) async {
+    try {
+      DocumentSnapshot sessionSnapshot =
+          await _userSession.doc(sessionId).get();
+
+      if (sessionSnapshot.exists) {
+        final List<dynamic>? todosData =
+            (sessionSnapshot.data() as Map<String, dynamic>)['todos'];
+        if (todosData != null) {
+          final List<Map<String, dynamic>> todos =
+              todosData.map((todo) => todo as Map<String, dynamic>).toList();
+          return todos;
+        } else {
+          return [];
+        }
+      } else {
+        return [];
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting session todos: $e");
       }
       rethrow;
     }

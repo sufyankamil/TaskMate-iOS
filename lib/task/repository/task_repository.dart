@@ -46,6 +46,7 @@ class TaskRepository {
   }
 
   Stream<List<Tasks>> fetchUserTasks(String uid) {
+    print('Fetching tasks for user: $uid');
     return _task
         .where('uid', isEqualTo: uid)
         .orderBy('createdAt', descending: true)

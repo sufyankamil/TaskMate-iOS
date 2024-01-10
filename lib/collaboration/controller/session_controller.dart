@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
@@ -14,7 +14,6 @@ import 'package:task_mate/model/session_model.dart';
 import 'package:task_mate/model/session_todo_model.dart';
 import 'package:task_mate/provider/failure.dart';
 import 'package:uuid/uuid.dart';
-import '../../model/session_task_model.dart';
 
 final sessionControllerProvider =
     StateNotifierProvider.autoDispose<SessionController, bool>((ref) {
@@ -23,6 +22,11 @@ final sessionControllerProvider =
     ref: ref,
     sessionRepository: sessionRepository,
   );
+});
+
+final userSessionTask = StreamProvider.autoDispose<List<Session>>((ref) {
+  final sessionController = ref.watch(sessionControllerProvider.notifier);
+  return sessionController.fetchSessionWithTask();
 });
 
 class SessionIdController extends StateNotifier<String?> {
@@ -209,17 +213,17 @@ class SessionController extends StateNotifier<bool> {
       // Add the new task to the existing task list
       session = session.copyWith(tasks: [...session.tasks, newSessionTask]);
 
-      print('---------------.>');
-
-      print(session);
-
       await Future.delayed(const Duration(seconds: 1));
 
       // Update the document in Firestore
       await _sessionRepository.updateTaskToSession(
           session, title, description, date, time, status, sessionId);
 
-      Fluttertoast.showToast(msg: 'Task Added Successfully');
+      Fluttertoast.showToast(
+          msg: 'Task Added Successfully',
+          timeInSecForIosWeb: 5,
+          backgroundColor: Colors.green,
+          fontSize: 16.0);
 
       // return a success message
       return right(unit);
@@ -231,60 +235,6 @@ class SessionController extends StateNotifier<bool> {
       return left(Failure(e.toString()));
     }
   }
-
-  // Future<void> addTaskToSession({
-  //   required String title,
-  //   required String description,
-  //   required String date,
-  //   required String time,
-  //   required String status,
-  // }) async {
-  //   state = true;
-
-  //   try {
-  //     // Use a valid sessionId
-  //     String sessionId = const Uuid().v4();
-
-  //     final uid = _ref.read(userProvider)?.uid ?? '';
-
-  //     final SessionTodo sessionTasks = SessionTodo(
-  //       id: sessionId,
-  //       uid: uid,
-  //       title: title,
-  //       description: description,
-  //       date: date,
-  //       time: time,
-  //       status: status,
-  //       isPending: true,
-  //       isCompleted: false,
-  //     );
-
-  //     // Ensure sessionId is not null or empty before calling addTaskToSession
-  //     if (sessionId.isNotEmpty) {
-  //       final result =
-  //           await _sessionRepository.addTaskToSession(sessionId, sessionTasks);
-
-  //       state = false;
-
-  //       result.fold(
-  //         (failure) => Fluttertoast.showToast(msg: failure.message),
-  //         (_) {
-  //           Fluttertoast.showToast(msg: 'Task Added in Session Successfully');
-  //           // Routemaster.of(context).pop();
-  //         },
-  //       );
-  //     } else {
-  //       Fluttertoast.showToast(msg: 'Invalid Session ID');
-  //     }
-  //   } catch (e) {
-  //     state = false;
-  //     if (kDebugMode) {
-  //       print("Error adding task to session: $e");
-  //     }
-  //     // Handle error or rethrow as needed
-  //     // rethrow;
-  //   }
-  // }
 
   void fetchSessionTasks(String sessionId) {
     try {
@@ -402,6 +352,31 @@ class SessionController extends StateNotifier<bool> {
       state = false;
       if (kDebugMode) {
         print('Error getting session details: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Stream<List<Session>> fetchSessionWithTask(){
+    final ownerId = _ref.read(userProvider)?.uid ?? '';
+    return _sessionRepository.fetchSessionWithTask(ownerId);
+  }
+
+  // Function to get session todos
+  Future<List<SessionTodo>> getSessionTodos(String sessionId) async {
+    try {
+      // Call the repository function to get the session todos
+      List<Map<String, dynamic>> todosData =
+          await _sessionRepository.getSessionTodos(sessionId);
+
+      // Convert the List<Map<String, dynamic>> to List<SessionTodo>
+      List<SessionTodo> sessionTodos =
+          todosData.map((todo) => SessionTodo.fromMap(todo)).toList();
+
+      return sessionTodos;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting session todos: $e');
       }
       rethrow;
     }
