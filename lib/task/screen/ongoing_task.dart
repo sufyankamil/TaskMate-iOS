@@ -278,12 +278,29 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           ),
           SlidableAction(
             onPressed: (context) {
-              futurePremium(context);
+              // futurePremium(context);
+              if (tasks.isCollaborative) {
+                taskController.updateTodoIsCollaborative(tasks, false);
+
+                Fluttertoast.showToast(
+                    msg: 'Task has been unshared',
+                    timeInSecForIosWeb: 4,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white);
+              } else {
+                taskController.updateTodoIsCollaborative(tasks, true);
+
+                Fluttertoast.showToast(
+                    msg: 'Task has been shared in session',
+                    timeInSecForIosWeb: 3,
+                    backgroundColor: Colors.green,
+                    textColor: Colors.white);
+              }
             },
             backgroundColor: const Color(0xFF21B7CA),
             foregroundColor: Colors.white,
-            icon: Icons.share,
-            label: 'Share',
+            icon: tasks!.isCollaborative ? Icons.share : Icons.share_outlined,
+            label: tasks.isCollaborative ? 'Unshare' : 'Share',
           ),
         ],
       ),

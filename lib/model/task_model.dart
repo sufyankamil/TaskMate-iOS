@@ -12,8 +12,12 @@ class Tasks {
   final bool isPending;
   final bool isCompleted;
   final int karma;
+  final bool isPremium;
+  bool isCollaborative;
+  final String date;
+  final String time;
 
-  const Tasks({
+  Tasks({
     required this.id,
     required this.title,
     // this.icon,
@@ -24,6 +28,10 @@ class Tasks {
     required this.isPending,
     required this.isCompleted,
     this.karma = 0,
+    this.isPremium = false,
+    this.isCollaborative = false,
+    required this.date,
+    this.time = '',
   });
 
   Tasks copyWith({
@@ -36,6 +44,10 @@ class Tasks {
     bool? isPending,
     bool? isCompleted,
     int? karma,
+    bool? isPremium,
+    bool? isCollaborative,
+     String? date,
+    String? time,
   }) {
     return Tasks(
       id: id ?? this.id,
@@ -48,6 +60,10 @@ class Tasks {
       isPending: isPending ?? this.isPending,
       isCompleted: isCompleted ?? this.isCompleted,
       karma: karma ?? this.karma,
+      isPremium: isPremium ?? this.isPremium,
+      isCollaborative: isCollaborative ?? this.isCollaborative,
+       date: date ?? this.date,
+      time: time ?? this.time,
     );
   }
 
@@ -63,6 +79,10 @@ class Tasks {
       'isPending': isPending,
       'isCompleted': isCompleted,
       'karma': karma,
+      'isPremium': isPremium,
+      'isCollaborative': isCollaborative,
+        'date': date,
+      'time': time,
     };
   }
 
@@ -79,12 +99,16 @@ class Tasks {
       isPending: map['isPending'],
       isCompleted: map['isCompleted'],
       karma: map['karma'],
+      isPremium: map['isPremium'],
+      isCollaborative: map['isCollaborative'],
+        date: map['date'],
+      time: map['time'],
     );
   }
 
   @override
   String toString() {
-    return 'Tasks(id: $id, title: $title, color: $color, todos: $todos, createdAt: $createdAt, uid: $uid, isPending: $isPending, isCompleted: $isCompleted, karma: $karma)';
+    return 'Tasks(id: $id, title: $title, color: $color, todos: $todos, createdAt: $createdAt, uid: $uid, isPending: $isPending, isCompleted: $isCompleted, karma: $karma, isPremium: $isPremium, isCollaborative: $isCollaborative, date: $date, time: $time)';
   }
 
   @override
@@ -101,7 +125,11 @@ class Tasks {
         other.uid == uid &&
         other.isPending == isPending &&
         other.isCompleted == isCompleted &&
-        other.karma == karma;
+        other.karma == karma &&
+        other.isPremium == isPremium &&
+        other.isCollaborative == isCollaborative &&
+        other.date == date && 
+        other.time == time;
   }
 
   @override
@@ -115,6 +143,10 @@ class Tasks {
         uid.hashCode ^
         isPending.hashCode ^
         isCompleted.hashCode ^
-        karma.hashCode;
+        karma.hashCode ^
+        isPremium.hashCode ^
+        isCollaborative.hashCode ^
+        date.hashCode ^
+        time.hashCode;
   }
 }

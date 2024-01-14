@@ -9,11 +9,13 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/theme/pallete.dart';
 
 import '../../auth/controller/auth_controller.dart';
 import '../../model/session_model.dart';
+import '../../task/controller/task_controller.dart';
 import '../controller/session_controller.dart';
 import '../repository/session_repository.dart';
 import 'showing_session_tasks.dart';
@@ -32,6 +34,15 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
 
   void navigateToSessionCreation() {
     Routemaster.of(context).push('/');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSessionDetails();
+    showSuccessMessage();
+    setPrefSession();
+    getPrefSession();
   }
 
   List<String> usersList = [];
@@ -87,12 +98,21 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     return sessionController.fetchSessionWithTask();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchSessionDetails();
-    showSuccessMessage();
-    fetchSessionWithTask();
+  // Setting shared preferences(when user enters this screen get the instance of shared preferences and set the session so that user stays in this screen even after closing the app)
+  setPrefSession() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('session', widget.sessionId);
+  }
+
+  getPrefSession() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final storedSessionId = prefs.getString('session');
+
+    if (storedSessionId == widget.sessionId) {
+      return;
+    } else {
+      navigateToSessionCreation();
+    }
   }
 
   @override
@@ -108,42 +128,64 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
 
     final isOwner = ownerId == userId;
 
-    final squreWidth = MediaQuery.of(context).size.width - 10.0.widthPercent;
-
-    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
-
-    bool isDarkTheme = themeNotifier.isDark;
-
-    final sessionControl = ref.watch(sessionControllerProvider.notifier);
-
     GlobalKey<RefreshIndicatorState> refreshKey =
         GlobalKey<RefreshIndicatorState>();
 
-    final usersSessionTask = ref.watch(userSessionTask);
+    final usersTask = ref.watch(userTaskProvider);
 
-    final sessionTodos = usersSessionTask.when(
+    final usersData = usersTask.when(
       data: (data) {
-        print('Data: $data');
-        return data;
-            },
+        final filteredTasks =
+            data.where((task) => task.isCollaborative == true).toList();
+
+        if (filteredTasks.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 100),
+              child: Text(
+                'No task found, Start adding tasks so that you don\'t forget your important tasks',
+                style: TextStyle(
+                  color: currentTheme.brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
+                softWrap: true,
+              ),
+            ),
+          );
+        } else {
+          return Expanded(
+            child: SingleChildScrollView(
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                children: [
+                  ...filteredTasks.map(
+                    (task) => LongPressDraggable(
+                      data: task,
+                      feedback: Opacity(
+                        opacity: 0.8,
+                        child: ShowSessionTasks(sessionTodo: task),
+                      ),
+                      child: ShowSessionTasks(sessionTodo: task),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      },
       loading: () => const Center(
         child: CircularProgressIndicator.adaptive(),
       ),
-      error: (error, stack) {
-        print('Error: $error');
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(
-              child: Text('Error: $error'),
-            ),
-          ],
-        );
-      },
+      error: (e, s) => Center(
+        child: Text('Error: $e'),
+      ),
     );
-
-    print('Outside usersSessionTask: $sessionTodos');
-
 
     return Scaffold(
       appBar: AppBar(
@@ -212,7 +254,7 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.only(left: 12.0),
               child: Text(
                 'Users in Session',
                 style:
@@ -223,7 +265,10 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
               stream: sessions,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  print('Error: ${snapshot.error}');
+                  Fluttertoast.showToast(
+                    msg: 'Error getting users in session',
+                    backgroundColor: Colors.red,
+                  ); 
                   return const Text('Error');
                 } else {
                   final List<String> users = snapshot.data ?? [];
@@ -269,64 +314,11 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
       body: RefreshIndicator(
         onRefresh: () async {
           refreshKey.currentState?.show();
-          // return Future.delayed(const Duration(seconds: 2));
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             sessionTodos is List && sessionTodos.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 100),
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        'No task found in this Session, Start adding task so that you don\'t forget your important task',
-                        style: TextStyle(
-                          color: currentTheme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                          fontSize: 20,
-                        ),
-                        textAlign: TextAlign.center,
-                        softWrap: true,
-                      ),
-                    ),
-                  )
-                :
-            ref.watch(userSessionTask).when(
-                  data: (data) => Expanded(
-                    child: SingleChildScrollView(
-                      child: GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        children: [
-                          ...data.map(
-                            (session) => LongPressDraggable(
-                              data: session.tasks.isNotEmpty ? session.tasks[0] : null,
-                              feedback: Opacity(
-                                opacity: 0.8,
-                                child: ShowSessionTasks(sessionTodo: session.tasks.isNotEmpty ? session.tasks[0] : null),
-                              ),
-                              child: ShowSessionTasks(sessionTodo: session.tasks.isNotEmpty ? session.tasks[0] : null),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  ),
-                  error: (error, stack) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Center(
-                        child: Text('Error: $error'),
-                      ),
-                    ],
-                  ),
-                ),
+            usersData,
           ],
         ),
       ),
@@ -681,26 +673,23 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
     return CupertinoButton.filled(
       onPressed: () async {
         if (_formKey.currentState!.validate()) {
+          _formKey.currentState!.save();
+          ref.read(postControllerProvider.notifier).addTaskInSession(
+                context: context,
+                title: titleController.text.trim(),
+                description: descriptionController.text.trim(),
+                date: formattedDate!,
+                time: selectedTime.format(context),
+              );
+
           final sessionController =
               ref.watch(sessionControllerProvider.notifier);
 
           Session? sessionDetails =
               await sessionController.getSessionDetails(widget.sessionId);
 
-          final result = sessionController.updateSessionTask(
-            sessionDetails!,
-            titleController.text.trim(),
-            descriptionController.text.trim(),
-            formattedDate!,
-            selectedTime.format(context),
-            'Pending',
-            widget.sessionId,
-          );
-
           titleController.clear();
           descriptionController.clear();
-
-          Navigator.pop(context);
         }
       },
       child: const Text('Submit'),

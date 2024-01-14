@@ -297,7 +297,6 @@ class SessionRepository {
   }
 
   Stream<List<Session>> fetchSessionWithTask(String ownerId) {
-    print('Fetching session for user: $ownerId');
     return _userSession
         .where('ownerId', isEqualTo: ownerId)
         .orderBy('createdAt', descending: true)
@@ -305,13 +304,13 @@ class SessionRepository {
         .asyncMap<List<Session>>((snapshot) async {
       try {
         final session = snapshot.docs
-            .map((doc) =>
-                Session.fromMap(doc.data() as Map<String, dynamic>))
+            .map((doc) => Session.fromMap(doc.data() as Map<String, dynamic>))
             .toList();
+
         return session;
       } catch (e) {
         // Handle errors and return an empty list in case of an error
-        print('Error in mapping session: $e');
+        print('Error in mapping session fetchSessionWithTask: $e');
         return [];
       }
     });
@@ -341,5 +340,35 @@ class SessionRepository {
       }
       rethrow;
     }
+  }
+
+  // Stream<List<Session>> fetchSessions(String uid) {
+  //   return _userSession
+  //       .where('ownerId', isEqualTo: uid)
+  //       .orderBy('createdAt', descending: true)
+  //       .snapshots()
+  //       .asyncMap<List<Session>>((snapshot) async {
+  //     try {
+  //       final session = snapshot.docs
+  //           .map((doc) => Session.fromMap(doc.data() as Map<String, dynamic>))
+  //           .toList();
+
+  //       return session;
+  //     } catch (e) {
+  //       // Handle errors and return an empty list in case of an error
+  //       print('Error in mapping session: $e');
+  //       return [];
+  //     }
+  //   });
+  // }
+
+  Stream<List<Session>> fetchSessions(String uid) {
+    return _userSession
+        .where('ownerId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map<List<Session>>((snapshot) => snapshot.docs
+            .map((doc) => Session.fromMap(doc.data() as Map<String, dynamic>))
+            .toList());
   }
 }

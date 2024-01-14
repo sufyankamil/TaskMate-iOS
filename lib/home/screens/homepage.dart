@@ -182,7 +182,7 @@ class _HomeState extends ConsumerState<Home> {
                 label: 'Add Task Category',
               ),
               BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.arrowsDownToPeople),
+                icon: Icon(Icons.people),
                 label: 'Collaborate',
               ),
               BottomNavigationBarItem(

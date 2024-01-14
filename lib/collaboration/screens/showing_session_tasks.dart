@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_mate/collaboration/controller/session_controller.dart';
 import 'package:task_mate/core/utils/extensions.dart';
-import 'package:task_mate/model/session_todo_model.dart';
 
-import '../../auth/controller/auth_controller.dart';
+import '../../model/task_model.dart';
 import '../../theme/pallete.dart';
 
 class ShowSessionTasks extends ConsumerWidget {
-  final SessionTodo? sessionTodo;
+  final Tasks sessionTodo;
 
   const ShowSessionTasks({super.key, required this.sessionTodo});
 
@@ -17,27 +14,13 @@ class ShowSessionTasks extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeNotifierProvider);
 
-    final sessionController = ref.watch(sessionControllerProvider.notifier);
-
-    final userId = ref.read(userProvider)?.uid ?? '';
-
     final squreWidth = MediaQuery.of(context).size.width - 10.0.widthPercent;
 
     final themeNotifier = ref.watch(themeNotifierProvider.notifier);
 
     bool isDarkTheme = themeNotifier.isDark;
 
-    final sessionControl = ref.watch(sessionControllerProvider.notifier);
-
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("Session Tasks"),
-        leading: IconButton(
-          icon: const Icon(FontAwesomeIcons.downLeftAndUpRightToCenter),
-          onPressed: () {},
-        ),
-      ),
       body: GestureDetector(
         onTap: () {},
         child: Container(
@@ -56,42 +39,44 @@ class ShowSessionTasks extends ConsumerWidget {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 7),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
-                child: Text(
-                  sessionTodo!.title,
-                  style: TextStyle(
-                    fontSize: 16.4,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkTheme
-                        ? Colors.white
-                        : currentTheme.primaryColorDark,
-                    decoration: TextDecoration.none,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 7),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+                  child: Text(
+                    sessionTodo.title,
+                    style: TextStyle(
+                      fontSize: 16.4,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkTheme
+                          ? Colors.white
+                          : currentTheme.primaryColorDark,
+                      decoration: TextDecoration.none,
+                    ),
+                    softWrap: true,
                   ),
-                  softWrap: true,
                 ),
-              ),
-              const SizedBox(height: 7),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
-                child: Text(
-                  sessionTodo!.description,
-                  style: TextStyle(
-                    fontSize: 14.4,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkTheme
-                        ? Colors.white
-                        : currentTheme.primaryColorDark,
-                    decoration: TextDecoration.none,
+                const SizedBox(height: 7),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+                  child: Text(
+                    sessionTodo.karma.toString(),
+                    style: TextStyle(
+                      fontSize: 14.4,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkTheme
+                          ? Colors.white
+                          : currentTheme.primaryColorDark,
+                      decoration: TextDecoration.none,
+                    ),
+                    softWrap: true,
                   ),
-                  softWrap: true,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

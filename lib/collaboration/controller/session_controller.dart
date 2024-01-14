@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/collaboration/repository/session_repository.dart';
 import 'package:task_mate/model/session_model.dart';
@@ -28,6 +30,73 @@ final userSessionTask = StreamProvider.autoDispose<List<Session>>((ref) {
   final sessionController = ref.watch(sessionControllerProvider.notifier);
   return sessionController.fetchSessionWithTask();
 });
+
+final userSessionsProvider = StreamProvider.autoDispose<List<Session>>((ref) {
+  final sessionController = ref.watch(sessionControllerProvider.notifier);
+
+  return sessionController.fetchSessionsForUser();
+});
+
+final sessionCounterProvider =
+    StateNotifierProvider<SessionCounter, List<Session>>((ref) {
+  return SessionCounter();
+});
+
+class SessionCounter extends StateNotifier<List<Session>> {
+  SessionCounter() : super([]) {
+    _subscription = _controller.stream.listen((sessions) {
+      state = sessions;
+      saveSessionsToPrefs(state);
+    });
+  }
+
+  late StreamController<List<Session>> _controller;
+  late StreamSubscription<List<Session>> _subscription;
+
+  static const String sessionListKey = 'sessionList';
+
+  void setSessions(List<Session> sessions) {
+    _controller.add(sessions);
+  }
+
+  void addSession(Session session) {
+    state = [...state, session];
+    saveSessionsToPrefs(state);
+    _controller.add(state);
+  }
+
+  void removeSession(String sessionId) {
+    state = state.where((session) => session.id != sessionId).toList();
+    saveSessionsToPrefs(state);
+    _controller.add(state);
+  }
+
+  Future<void> loadSessionsFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedSessions = prefs.getStringList(sessionListKey);
+
+    if (storedSessions != null) {
+      final sessions = storedSessions
+          .map((sessionString) => Session.fromMap(json.decode(sessionString)))
+          .toList();
+      _controller.add(sessions);
+    }
+  }
+
+  Future<void> saveSessionsToPrefs(List<Session> sessions) async {
+    final prefs = await SharedPreferences.getInstance();
+    final sessionStrings =
+        sessions.map((session) => json.encode(session.toMap())).toList();
+    prefs.setStringList(sessionListKey, sessionStrings);
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    _controller.close();
+    super.dispose();
+  }
+}
 
 class SessionIdController extends StateNotifier<String?> {
   SessionIdController() : super(null);
@@ -69,7 +138,7 @@ class SessionController extends StateNotifier<bool> {
       Session sessionModel = Session(
         id: id,
         ownerId: _ref.read(userProvider)?.uid ?? '',
-        createdAt: DateTime.now(),
+        createdAt: Timestamp.fromDate(DateTime.now()),
         endedAt: '',
         usersJoined: [],
       );
@@ -357,7 +426,7 @@ class SessionController extends StateNotifier<bool> {
     }
   }
 
-  Stream<List<Session>> fetchSessionWithTask(){
+  Stream<List<Session>> fetchSessionWithTask() {
     final ownerId = _ref.read(userProvider)?.uid ?? '';
     return _sessionRepository.fetchSessionWithTask(ownerId);
   }
@@ -377,6 +446,23 @@ class SessionController extends StateNotifier<bool> {
     } catch (e) {
       if (kDebugMode) {
         print('Error getting session todos: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Stream<List<Session>> fetchSessionsForUser() {
+    try {
+      final ownerId = _ref.read(userProvider)?.uid ?? '';
+
+      final result = _sessionRepository.fetchSessions(ownerId);
+
+      //  _ref.read(sessionCounterProvider.notifier).setSessions(result);
+
+      return result;
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching sessions for user: $e");
       }
       rethrow;
     }

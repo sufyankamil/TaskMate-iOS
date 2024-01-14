@@ -70,6 +70,10 @@ class TaskController extends StateNotifier<bool> {
   void addTask({
     required BuildContext context,
     required String title,
+    String? description,
+    String? date,
+    String? time,
+
   }) async {
     state = true;
 
@@ -102,6 +106,74 @@ class TaskController extends StateNotifier<bool> {
           uid: uid,
           isPending: true,
           isCompleted: false,
+          isCollaborative: false,
+          date: date ?? '',
+          time: time ?? '',
+        );
+
+        if (kDebugMode) {
+          print(tasks.toMap());
+        }
+
+        final result = await _taskRepository.addTask(tasks);
+
+        state = false;
+
+        result.fold(
+          (failure) => Fluttertoast.showToast(msg: failure.message),
+          (_) {
+            Fluttertoast.showToast(msg: 'Task Added Successfully');
+            Routemaster.of(context).pop();
+          },
+        );
+      }
+    } catch (e) {
+      state = false;
+      if (kDebugMode) {
+        print('Error in addTask: $e');
+      }
+    }
+  }
+
+  void addTaskInSession({
+    required BuildContext context,
+    required String title,
+    String? description,
+    String? date,
+    String? time,
+  }) async {
+    state = true;
+
+    String taskId = const Uuid().v1();
+
+    final colors = generateRandomColor();
+
+    final uid = _ref.read(userProvider)?.uid ?? '';
+
+    Stream<List<Tasks>> existingTasksStream =
+        _taskRepository.fetchUserTasks(uid);
+
+    // Listen to the stream and check if any existing task has the same title as the new task
+    try {
+      final List<Tasks> existingTasks = await existingTasksStream.first;
+
+      if (existingTasks
+          .any((Tasks existingTask) => existingTask.title == title)) {
+        state = false;
+        Fluttertoast.showToast(msg: 'Task with the same name already exists.');
+        return;
+      } else {
+        final Tasks tasks = Tasks(
+          id: taskId,
+          title: title,
+          color: colors.value.toRadixString(16).padLeft(8, '0'),
+          createdAt: DateTime.now(),
+          uid: uid,
+          isPending: true,
+          isCompleted: false,
+          isCollaborative: true,
+          date: date ?? '',
+          time: time ?? '',
         );
 
         if (kDebugMode) {
@@ -178,6 +250,19 @@ class TaskController extends StateNotifier<bool> {
       todo.isDone = isDone;
       // Update Firestore document
       await _taskRepository.updateTodoIsDone(task, todo);
+    } catch (e) {
+      // Handle other exceptions
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  Future<void> updateTodoIsCollaborative(
+      Tasks task, bool isCollaborative) async {
+    try {
+      // Update local state
+      task.isCollaborative = isCollaborative;
+      // Update Firestore document
+      await _taskRepository.updateTodoIsCollaborative(task, isCollaborative);
     } catch (e) {
       // Handle other exceptions
       Fluttertoast.showToast(msg: e.toString());

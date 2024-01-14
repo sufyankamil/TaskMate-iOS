@@ -1,21 +1,34 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
+import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/collaboration/controller/session_controller.dart';
+import 'package:task_mate/core/utils/extensions.dart';
+
+import '../../model/session_model.dart';
 
 final sessionsCreatedProvider =
-    StateNotifierProvider<SessionCounter, int>((ref) {
+    StateNotifierProvider<SessionCounter, List<Session>>((ref) {
   return SessionCounter();
 });
 
-class SessionCounter extends StateNotifier<int> {
-  SessionCounter() : super(0);
+class SessionCounter extends StateNotifier<List<Session>> {
+  SessionCounter() : super([]);
 
-  void increment() {
-    state++;
+  void setSessions(List<Session> sessions) {
+    state = sessions;
+  }
+
+  void addSession(Session session) {
+    state = [...state, session];
+  }
+
+  void removeSession(String sessionId) {
+    state = state.where((session) => session.id != sessionId).toList();
   }
 }
 
@@ -29,11 +42,30 @@ class TaskCollaboration extends ConsumerStatefulWidget {
 
 class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
   late int sessionsCreated;
+  late String sessionId;
 
   @override
   void initState() {
     super.initState();
-    sessionsCreated = ref.read(sessionsCreatedProvider);
+    sessionId = '';
+    setSession();
+  }
+
+  void navigateToSessionCreation(dynamic activeSession) {
+    Routemaster.of(context).push('/session-joined/$activeSession');
+  }
+
+  setSession() async {
+    dynamic activeSession = await SessionManager().get("activeSession");
+    print('Active Session: $activeSession');
+
+    if (activeSession != null &&
+        activeSession is String &&
+        activeSession.isNotEmpty) {
+      navigateToSessionCreation(activeSession);
+    } else {
+      await SessionManager().set("activeSession", sessionId);
+    }
   }
 
   void navigateToSessionJoined(BuildContext context, String sessionId) {
@@ -44,147 +76,242 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
   Widget build(BuildContext context) {
     final sessionController = ref.watch(sessionControllerProvider.notifier);
 
-    String sessionId = '';
-
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Create a new session
-                      dynamic activeSession =
-                          await SessionManager().get("activeSession");
-
-                      if (activeSession != null &&
-                          activeSession is String &&
-                          activeSession.isNotEmpty) {
-                        if (context.mounted) {
-                          showPlatformDialog(
-                            context: context,
-                            builder: (context) {
-                              return CupertinoAlertDialog(
-                                title: const Text('Active Session'),
-                                content: const Text(
-                                  "You already have an active session. Please end the current session to create a new one.",
-                                ),
-                                actions: [
-                                  CupertinoDialogAction(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        }
-                      } else {
-                        sessionId =
-                            await sessionController.createNewSession(context);
-
-                        _showSessionCreationSuccess(context, sessionId);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                    child: const Text('Start Session',
-                        style: TextStyle(
-                          color: Colors.white,
-                        )),
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      dynamic activeSession =
-                          await SessionManager().get("activeSession");
-
-                      if (activeSession != null &&
-                          activeSession is String &&
-                          activeSession.isNotEmpty) {
-                        await sessionController.endSession();
-                        if (context.mounted) {
-                          showPlatformDialog(
-                            context: context,
-                            builder: (context) {
-                              return CupertinoAlertDialog(
-                                title: const Text('Session Ended'),
-                                content: const Text(
-                                    "Your session has been ended successfully."),
-                                actions: [
-                                  CupertinoDialogAction(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        }
-                        setState(() {
-                          sessionsCreated--;
-                        });
-                      } else {
-                        if (context.mounted) {
-                          showPlatformDialog(
-                            context: context,
-                            builder: (context) {
-                              return CupertinoAlertDialog(
-                                title: const Text('No Active Session'),
-                                content: const Text(
-                                    "You do not have an active session to end."),
-                                actions: [
-                                  CupertinoDialogAction(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    child: const Text('End Session',
-                        style: TextStyle(
-                          color: Colors.white,
-                        )),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Already have a session ID?', style: TextStyle()),
-                  const SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () async {
-                      // Get the session ID from the user
-
-                      sessionTextFormFIeld(ref);
-                    },
-                    child: const Text('Enter session ID'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                startSessionButton(context, sessionId, sessionController),
+                const Spacer(),
+                endSessionButton(sessionController, context),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Already have a session ID?', style: TextStyle()),
+                const SizedBox(width: 10),
+                TextButton(
+                  onPressed: () async {
+                    sessionTextFormFIeld(ref);
+                  },
+                  child: const Text('Enter session ID'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            activeSessions(ref),
+          ],
         ),
       ),
+    );
+  }
+
+  ElevatedButton startSessionButton(
+      BuildContext context, sessionId, SessionController sessionController) {
+    return ElevatedButton(
+      onPressed: () async {
+        // Create a new session
+        dynamic activeSession = await SessionManager().get("activeSession");
+
+        if (activeSession != null &&
+            activeSession is String &&
+            activeSession.isNotEmpty) {
+          if (context.mounted) {
+            showPlatformDialog(
+              context: context,
+              builder: (context) {
+                return CupertinoAlertDialog(
+                  title: const Text('Active Session'),
+                  content: const Text(
+                    "You already have an active session. Please end the current session to create a new one.",
+                  ),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        } else {
+          String newSessionId =
+              await sessionController.createNewSession(context);
+
+          setState(() {
+            sessionId = newSessionId;
+          });
+
+          _showSessionCreationSuccess(context, sessionId);
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.green,
+      ),
+      child: const Text('Start Session',
+          style: TextStyle(
+            color: Colors.white,
+          )),
+    );
+  }
+
+  //////
+
+  activeSessions(WidgetRef ref) {
+    final userSessions = ref.watch(userSessionsProvider);
+
+    List<String> sessionIdss = [];
+
+    final userSessionsData = userSessions.maybeWhen(
+      data: (data) {
+        print('Data: $data');
+        final sessionIds = data.map((session) => session.id).toList();
+
+        final createdAt = data.map((session) => session.createdAt).toList();
+        sessionIdss = sessionIds;
+        print('Session IDs: $sessionIdss');
+
+        return data;
+      },
+      loading: () => null,
+      error: (e, s) => null,
+      orElse: () => null,
+    );
+
+    if (userSessionsData != null) {
+      // Save the number of tasks in the notificationCount variable
+      sessionsCreated = userSessionsData.length;
+    } else if (userSessions.error != null) {
+      // Handle error state here if necessary
+      if (kDebugMode) {
+        print('Error State in recent: ${userSessions.error}');
+      }
+    } else {
+      // Handle loading state here if necessary
+      if (kDebugMode) {
+        print('Loading State');
+      }
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(3.0.widthPercent),
+          child: const Text(
+            'Recently joined sessions',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.all(3.0),
+          child: Divider(),
+        ),
+        if (userSessionsData == null)
+          const Center(
+            child: CircularProgressIndicator.adaptive(),
+          )
+        else if (userSessionsData.isEmpty)
+          const Center(
+            child: Text('No sessions found'),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            itemCount: userSessionsData.length,
+            itemBuilder: (context, index) {
+              
+              Session session = userSessionsData[index];
+              String sessionId = session.id;
+              DateTime createdDateTime = session.createdAt.toDate();
+
+              String formattedDate =
+                  DateFormat('dd-MM-yyyy HH:mm:ss').format(createdDateTime);
+
+              return ListTile(
+                leading: const Icon(Icons.circle, color: Colors.green),
+                title: Text('Session ID: $sessionId',
+                    softWrap: true, style: const TextStyle(fontSize: 13)),
+                subtitle: Text('Created on: $formattedDate'),
+                trailing: const Text('2', style: TextStyle(fontSize: 18)),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  ElevatedButton endSessionButton(
+      SessionController sessionController, BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        dynamic activeSession = await SessionManager().get("activeSession");
+
+        if (activeSession != null &&
+            activeSession is String &&
+            activeSession.isNotEmpty) {
+          await sessionController.endSession();
+          if (context.mounted) {
+            showPlatformDialog(
+              context: context,
+              builder: (context) {
+                return CupertinoAlertDialog(
+                  title: const Text('Session Ended'),
+                  content:
+                      const Text("Your session has been ended successfully."),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        } else {
+          if (context.mounted) {
+            showPlatformDialog(
+              context: context,
+              builder: (context) {
+                return CupertinoAlertDialog(
+                  title: const Text('No Active Session'),
+                  content:
+                      const Text("You do not have an active session to end."),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+      ),
+      child: const Text('End Session',
+          style: TextStyle(
+            color: Colors.white,
+          )),
     );
   }
 
