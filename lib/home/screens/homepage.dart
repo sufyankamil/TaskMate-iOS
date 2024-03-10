@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:routemaster/routemaster.dart';
 
 import '../../auth/controller/auth_controller.dart';
@@ -184,6 +183,10 @@ class _HomeState extends ConsumerState<Home> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
                 label: 'Collaborate',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.call_outlined),
+                label: 'Join Call',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.report),

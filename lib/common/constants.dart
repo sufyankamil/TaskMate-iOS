@@ -1,5 +1,6 @@
 import 'package:task_mate/collaboration/screens/session_creation.dart';
 
+import '../calls/screens/join_call.dart';
 import '../report/screens/show_report.dart';
 import '../task/screen/add_task.dart';
 import '../task/screen/show_all_task.dart';
@@ -24,6 +25,7 @@ class Constants {
     ShowAllTask(),
     AddTask(),
     TaskCollaboration(),
+    JoinCall(),
     ShowReport(),
   ];
 

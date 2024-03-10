@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/auth/screens/login_screen.dart';
 import 'package:task_mate/collaboration/screens/session_joined.dart';
-import 'package:task_mate/splash/screens/intro_screen_1.dart';
 
 import 'collaboration/screens/session_creation.dart';
 import 'home/screens/homepage.dart';

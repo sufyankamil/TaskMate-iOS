@@ -52,6 +52,7 @@ dependencies:
   flutter_dialogs: ^3.0.0
   flutter_mailer: ^2.1.2
   flutter_session_manager: ^1.0.3
+  zego_uikit_prebuilt_video_conference: ^2.7.0
 
 dev_dependencies:
   flutter_test:
