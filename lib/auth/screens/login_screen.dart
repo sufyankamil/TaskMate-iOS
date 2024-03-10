@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -286,7 +287,7 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
 
                 try {
                   // Set loading state
-                  authController.state = true;
+                  // authController.state = true;
 
                   // Call the signUpWithEmailAndPassword method from AuthController
                   final result =
@@ -294,7 +295,9 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
                     emailController.text,
                     passwordController.text,
                   );
-                  print(result);
+                  if (kDebugMode) {
+                    print(result);
+                  }
                   if (result) {
                     if (context.mounted) {
                       Navigator.pushReplacement(
@@ -307,7 +310,7 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
                   } else {}
                 } finally {
                   // Reset loading state
-                  authController.state = false;
+                  // authController.state = false;
                 }
               }
             },
@@ -390,7 +393,7 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
           onPressed: () async {
             try {
               // Set loading state
-              authController.state = true;
+              // authController.state = true;
 
               // Call the signInWithApple method from AuthController
               await authController.signInWithApple(context);
@@ -404,10 +407,12 @@ class _FInalLoginState extends ConsumerState<FInalLogin> {
                 );
               }
             } catch (e) {
-              print(e);
+              if (kDebugMode) {
+                print(e);
+              }
             } finally {
               // Reset loading state
-              authController.state = false;
+              // authController.state = false;
             }
           },
           child: Row(
@@ -495,20 +500,21 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           onPressed: () async {
             try {
               // Set loading state
-              authController.state = true;
+              // authController.state = true;
 
               // Call the signInWithApple method from AuthController
               await authController.signInWithApple(context);
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const Home(),
-                ),
-              );
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Home(),
+                  ),
+                );
+              }
             } finally {
               // Reset loading state
-              authController.state = false;
+              // authController.state = false;
             }
           },
           icon: Icon(
@@ -536,13 +542,13 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
       try {
         // Set loading state
-        authController.state = true;
+        // authController.state = true;
 
         // Call the handleResetPassword method from AuthController
         await authController.sendPasswordResetEmail(email);
       } finally {
         // Reset loading state
-        authController.state = false;
+        // authController.state = false;
       }
     }
 
@@ -700,7 +706,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
                 try {
                   // Set loading state
-                  authController.state = true;
+                  // authController.state = true;
 
                   // Call the signUpWithEmailAndPassword method from AuthController
                   final result =
@@ -710,7 +716,9 @@ class _SigninPageState extends ConsumerState<SigninPage> {
                     context,
                   );
 
-                  print(result);
+                  if (kDebugMode) {
+                    print(result);
+                  }
 
                   if (result) {
                     if (context.mounted) {
@@ -724,7 +732,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
                   } else {}
                 } finally {
                   // Reset loading state
-                  authController.state = false;
+                  // authController.state = false;
                 }
               }
             },

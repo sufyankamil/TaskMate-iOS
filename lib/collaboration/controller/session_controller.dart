@@ -9,13 +9,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_session_manager/flutter_session_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:routemaster/routemaster.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
 import 'package:task_mate/collaboration/repository/session_repository.dart';
+import 'package:task_mate/common/constants.dart';
 import 'package:task_mate/model/session_model.dart';
 import 'package:task_mate/model/session_todo_model.dart';
 import 'package:task_mate/provider/failure.dart';
 import 'package:uuid/uuid.dart';
+
+final addTaskInSessionProvider =
+    StateNotifierProvider.autoDispose<SessionController, bool>((ref) {
+  final sessionRepository = ref.watch(sessionRepositoryProvider);
+  return SessionController(
+    sessionRepository: sessionRepository,
+    ref: ref,
+  );
+});
 
 final sessionControllerProvider =
     StateNotifierProvider.autoDispose<SessionController, bool>((ref) {
@@ -138,9 +149,16 @@ class SessionController extends StateNotifier<bool> {
       Session sessionModel = Session(
         id: id,
         ownerId: _ref.read(userProvider)?.uid ?? '',
-        createdAt: Timestamp.fromDate(DateTime.now()),
+        sessionCreatedAt: Timestamp.fromDate(DateTime.now()),
         endedAt: '',
         usersJoined: [],
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        status: '',
+        isPremium: false,
+        isCollaborative: false,
       );
 
       if (kDebugMode) {
@@ -158,22 +176,24 @@ class SessionController extends StateNotifier<bool> {
       state = false;
 
       // Set the active session in the session manager
-      await SessionManager().set('activeSession', sessionId);
+      await SessionManager().set(Constants.activeSession, sessionId);
 
       // Set a timer for 1 hour
       Timer(const Duration(hours: 1), () async {
         // Remove the active session after 1 hour
-        await SessionManager().remove('activeSession');
+        await SessionManager().remove(Constants.activeSession);
         if (context.mounted) {
           showPlatformDialog(
             context: context,
             builder: (_) => BasicDialogAlert(
-              title: const Text("Session Expired"),
+              title: const Text(Constants.sessionExpired),
               content: const Text(
-                  "Your session has expired. Please create a new session to continue."),
+                Constants.sessionExpiredContent,
+                textAlign: TextAlign.center,
+              ),
               actions: [
                 BasicDialogAction(
-                  title: const Text("OK"),
+                  title: const Text(Constants.ok),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -186,8 +206,6 @@ class SessionController extends StateNotifier<bool> {
 
       return sessionId;
     } catch (e) {
-      // Handle error or rethrow as needed
-      // Set loading to false in case of an error
       state = false;
       rethrow;
     }
@@ -197,7 +215,8 @@ class SessionController extends StateNotifier<bool> {
   Future<void> endSession() async {
     try {
       // Ensure there is an active session
-      dynamic activeSession = await SessionManager().get("activeSession");
+      dynamic activeSession =
+          await SessionManager().get(Constants.activeSession);
       if (activeSession != null &&
           activeSession is String &&
           activeSession.isNotEmpty) {
@@ -205,7 +224,7 @@ class SessionController extends StateNotifier<bool> {
         await _sessionRepository.endSession(activeSession);
 
         // Remove the active session from the session manager
-        await SessionManager().remove('activeSession');
+        await SessionManager().remove(Constants.activeSession);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -289,7 +308,7 @@ class SessionController extends StateNotifier<bool> {
           session, title, description, date, time, status, sessionId);
 
       Fluttertoast.showToast(
-          msg: 'Task Added Successfully',
+          msg: Constants.taskAddedSuccessfully,
           timeInSecForIosWeb: 5,
           backgroundColor: Colors.green,
           fontSize: 16.0);
@@ -344,7 +363,7 @@ class SessionController extends StateNotifier<bool> {
         print('Successfully left session with ID: $sessionId');
       }
       Fluttertoast.showToast(
-          msg: "Successfully left the session",
+          msg: Constants.sessionLeft,
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           timeInSecForIosWeb: 5,
@@ -389,7 +408,7 @@ class SessionController extends StateNotifier<bool> {
     final sessionRepository = ref.read(sessionRepositoryProvider);
     final sessionId = ref.read(sessionIdProvider);
 
-    // Perform the asynchronous operation
+    // Performimg asynchronous operation
     try {
       final ownerId = await sessionRepository.getOwnerId(sessionId!);
       return ownerId;
@@ -397,7 +416,6 @@ class SessionController extends StateNotifier<bool> {
       if (kDebugMode) {
         print('Error getting owner ID: $e');
       }
-      // Optionally, you can rethrow the error or return a default value.
       return null;
     }
   });
@@ -457,14 +475,75 @@ class SessionController extends StateNotifier<bool> {
 
       final result = _sessionRepository.fetchSessions(ownerId);
 
-      //  _ref.read(sessionCounterProvider.notifier).setSessions(result);
-
       return result;
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching sessions for user: $e");
       }
       rethrow;
+    }
+  }
+
+  void updateAddTask({
+    required BuildContext context,
+    required String sessionId,
+    required String title,
+    String? description,
+    String? date,
+    String? time,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+    state = true;
+
+    final uid = _ref.read(userProvider)?.uid ?? '';
+
+    try {
+      final Session sessionsData = Session(
+        id: sessionId,
+        ownerId: uid,
+        sessionCreatedAt: Timestamp.fromDate(DateTime.now()),
+        endedAt: '',
+        tasks: [],
+        usersJoined: [],
+        title: title,
+        description: description ?? '',
+        date: date ?? '',
+        time: time ?? '',
+        status: '',
+        isPremium: false,
+        isCollaborative: false,
+      );
+
+      if (kDebugMode) {
+        print(sessionsData.toMap());
+      }
+
+      final result = await _sessionRepository.updateAddTask(sessionsData);
+
+      if (!mounted) {
+        return; // Widget is not mounted, avoid updating the state
+      }
+
+      state = false;
+
+      result.fold(
+        (failure) => Fluttertoast.showToast(msg: failure.message),
+        (_) {
+          Fluttertoast.showToast(msg: Constants.sessionTaskUpdated);
+          Routemaster.of(context).pop();
+        },
+      );
+    } catch (e) {
+      if (!mounted) {
+        return; // Widget is not mounted, avoid updating the state
+      }
+      state = false;
+      if (kDebugMode) {
+        print('Error in addTask: $e');
+      }
+      Fluttertoast.showToast(msg: Constants.sessionTaskUpdateFailed);
     }
   }
 }

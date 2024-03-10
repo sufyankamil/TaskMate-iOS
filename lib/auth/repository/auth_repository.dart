@@ -70,7 +70,6 @@ class AuthRepository {
           karma: 0,
         );
       } else {
-        print("user existanve new");
         // get user from firestore
         user = await getUserData(userCredential.user!.uid).first;
       }
@@ -129,7 +128,9 @@ class AuthRepository {
       );
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
-      print(e.code);
+      if (kDebugMode) {
+        print(e.code);
+      }
       switch (e.code) {
         case 'ERROR_USER_NOT_FOUND':
           Fluttertoast.showToast(
@@ -160,23 +161,24 @@ class AuthRepository {
           );
           break;
         case 'too-many-requests':
-          await showPlatformDialog(
-            context: context,
-            builder: (_) => BasicDialogAlert(
-              title: const Text("Too Many Requests"),
-              content: const Text(
-                  "Access to this account has been temporarily disabled due to many failed login attempts. You can try again later."),
-              actions: <Widget>[
-                BasicDialogAction(
-                  title: const Text("OK"),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          );
-
+          if (context.mounted) {
+            await showPlatformDialog(
+              context: context,
+              builder: (_) => BasicDialogAlert(
+                title: const Text("Too Many Requests"),
+                content: const Text(
+                    "Access to this account has been temporarily disabled due to many failed login attempts. You can try again later."),
+                actions: <Widget>[
+                  BasicDialogAction(
+                    title: const Text("OK"),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
           break;
         case 'ERROR_OPERATION_NOT_ALLOWED':
           Fluttertoast.showToast(
@@ -373,12 +375,12 @@ class AuthRepository {
       }
 
       return right(user);
-    } on SignInWithAppleException catch (e) {
+    } on SignInWithAppleException {
       Fluttertoast.showToast(
           msg: 'The operation couldn’t be completed. Try again later.',
           backgroundColor: Colors.red);
 
-      throw e;
+      rethrow;
     } catch (e) {
       if (kDebugMode) {
         print(e.toString());
@@ -436,19 +438,6 @@ class AuthRepository {
   FutureEither<UserModel> isSignedInWithApple() async {
     try {
       // Check if the user is currently signed in with Apple
-      final result = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final OAuthProvider oAuthProvider = OAuthProvider("apple.com");
-
-      final AuthCredential credential = oAuthProvider.credential(
-        idToken: result.identityToken,
-        accessToken: result.authorizationCode,
-      );
 
       final user = _auth.currentUser;
 

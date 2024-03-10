@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:task_mate/auth/controller/auth_controller.dart';
+import 'package:task_mate/common/constants.dart';
 import 'package:task_mate/theme/pallete.dart';
 
-import '../../model/task_model.dart';
 import '../controller/task_controller.dart';
 import 'show_tasks.dart';
 
@@ -31,7 +31,7 @@ class _ShowAllTaskState extends ConsumerState<ShowAllTask> {
             child: Padding(
               padding: const EdgeInsets.only(top: 100),
               child: Text(
-                'No task found, Start adding tasks so that you don\'t forget your important tasks',
+                Constants.noTaskFound,
                 style: TextStyle(
                   color: currentTheme.brightness == Brightness.dark
                       ? Colors.white
@@ -45,24 +45,27 @@ class _ShowAllTaskState extends ConsumerState<ShowAllTask> {
           );
         } else {
           return Expanded(
-            child: SingleChildScrollView(
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                children: [
-                  ...filteredTasks.map(
-                    (task) => LongPressDraggable(
-                      data: task,
-                      feedback: Opacity(
-                        opacity: 0.8,
-                        child: ShowTasks(tasks: task),
-                      ),
-                      child: ShowTasks(tasks: task),
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(8.0),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final task = filteredTasks[index];
+                        return ShowTasks(tasks: task);
+                      },
+                      childCount: filteredTasks.length,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         }
@@ -71,7 +74,15 @@ class _ShowAllTaskState extends ConsumerState<ShowAllTask> {
         child: CircularProgressIndicator.adaptive(),
       ),
       error: (e, s) => Center(
-        child: Text('Error: $e'),
+        child: ListTile(
+          leading: const Icon(Icons.error_outline),
+          title: const Text('Error loading tasks'),
+          subtitle: Text('$e'),
+          trailing: ElevatedButton(
+            child: const Text('Retry'),
+            onPressed: () {},
+          ),
+        ),
       ),
     );
 

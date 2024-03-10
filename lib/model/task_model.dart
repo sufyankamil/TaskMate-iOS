@@ -46,7 +46,7 @@ class Tasks {
     int? karma,
     bool? isPremium,
     bool? isCollaborative,
-     String? date,
+    String? date,
     String? time,
   }) {
     return Tasks(
@@ -62,7 +62,7 @@ class Tasks {
       karma: karma ?? this.karma,
       isPremium: isPremium ?? this.isPremium,
       isCollaborative: isCollaborative ?? this.isCollaborative,
-       date: date ?? this.date,
+      date: date ?? this.date,
       time: time ?? this.time,
     );
   }
@@ -81,7 +81,7 @@ class Tasks {
       'karma': karma,
       'isPremium': isPremium,
       'isCollaborative': isCollaborative,
-        'date': date,
+      'date': date,
       'time': time,
     };
   }
@@ -101,7 +101,7 @@ class Tasks {
       karma: map['karma'],
       isPremium: map['isPremium'],
       isCollaborative: map['isCollaborative'],
-        date: map['date'],
+      date: map['date'],
       time: map['time'],
     );
   }
@@ -128,7 +128,7 @@ class Tasks {
         other.karma == karma &&
         other.isPremium == isPremium &&
         other.isCollaborative == isCollaborative &&
-        other.date == date && 
+        other.date == date &&
         other.time == time;
   }
 

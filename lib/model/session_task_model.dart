@@ -1,4 +1,4 @@
-class SessionTasks{
+class SessionTasks {
   final String id;
   final String ownerId; // user id(uid)
   final String title;
@@ -6,8 +6,10 @@ class SessionTasks{
   final String date;
   final String time;
   final String status;
+  final bool isPremium;
+  bool isCollaborative;
 
-  const SessionTasks({
+  SessionTasks({
     required this.id,
     required this.ownerId,
     required this.title,
@@ -15,6 +17,8 @@ class SessionTasks{
     required this.date,
     required this.time,
     required this.status,
+    this.isPremium = false,
+    this.isCollaborative = false,
   });
 
   SessionTasks copyWith({
@@ -25,6 +29,8 @@ class SessionTasks{
     String? date,
     String? time,
     String? status,
+    bool? isPremium,
+    bool? isCollaborative,
   }) {
     return SessionTasks(
       id: id ?? this.id,
@@ -34,6 +40,8 @@ class SessionTasks{
       date: date ?? this.date,
       time: time ?? this.time,
       status: status ?? this.status,
+      isPremium: isPremium ?? this.isPremium,
+      isCollaborative: isCollaborative ?? this.isCollaborative,
     );
   }
 
@@ -46,6 +54,8 @@ class SessionTasks{
       'date': date,
       'time': time,
       'status': status,
+      'isPremium': isPremium,
+      'isCollaborative': isCollaborative,
     };
   }
 
@@ -58,36 +68,42 @@ class SessionTasks{
       date: map['date'],
       time: map['time'],
       status: map['status'],
+      isPremium: map['isPremium'],
+      isCollaborative: map['isCollaborative'],
     );
   }
 
-    @override
+  @override
   String toString() {
-    return 'SessionTasks(id: $id, ownerId: $ownerId, title: $title, description: $description, date: $date, time: $time, status: $status)';
+    return 'SessionTasks(id: $id, ownerId: $ownerId, title: $title, description: $description, date: $date, time: $time, status: $status, isPremium: $isPremium, isCollaborative: $isCollaborative)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is SessionTasks &&
-      other.id == id &&
-      other.ownerId == ownerId &&
-      other.title == title &&
-      other.description == description &&
-      other.date == date &&
-      other.time == time &&
-      other.status == status;
+        other.id == id &&
+        other.ownerId == ownerId &&
+        other.title == title &&
+        other.description == description &&
+        other.date == date &&
+        other.time == time &&
+        other.status == status &&
+        other.isPremium == isPremium &&
+        other.isCollaborative == isCollaborative;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      ownerId.hashCode ^
-      title.hashCode ^
-      description.hashCode ^
-      date.hashCode ^
-      time.hashCode ^
-      status.hashCode;
+        ownerId.hashCode ^
+        title.hashCode ^
+        description.hashCode ^
+        date.hashCode ^
+        time.hashCode ^
+        status.hashCode ^
+        isPremium.hashCode ^
+        isCollaborative.hashCode;
   }
 }

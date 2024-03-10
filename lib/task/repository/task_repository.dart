@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
@@ -32,7 +33,7 @@ class TaskRepository {
 
       if (existingTaskQuery.docs.isNotEmpty) {
         // A task with the same name already exists for the user
-        return left(Failure('Task with the same name already exists.'));
+        return left(Failure(Constants.taskAlreadyExists));
       }
 
       // No duplicate task found, proceed with adding the new task
@@ -58,7 +59,9 @@ class TaskRepository {
         return tasks;
       } catch (e) {
         // Handle errors and return an empty list in case of an error
-        print('Error in mapping tasks: $e');
+        if (kDebugMode) {
+          print('Error in mapping tasks: $e');
+        }
         return [];
       }
     });

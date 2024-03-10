@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:task_mate/model/session_todo_model.dart';
 import 'package:task_mate/provider/providers.dart';
 
 import '../../common/constants.dart';
@@ -37,7 +36,7 @@ class SessionRepository {
       User? user = _auth.currentUser;
 
       if (user == null) {
-        throw Exception("User not authenticated");
+        throw Exception(Constants.userNotAuth);
       }
 
       // Create a new session document in Firestore
@@ -78,7 +77,6 @@ class SessionRepository {
 
       return sessionSnapshot.exists;
     } catch (e) {
-      // Handle error or rethrow as needed
       rethrow;
     }
   }
@@ -132,7 +130,7 @@ class SessionRepository {
         if (kDebugMode) {
           print('Document not found: ${session.id}');
         }
-        Fluttertoast.showToast(msg: 'Document not found');
+        Fluttertoast.showToast(msg: Constants.docNotFound);
       } else {
         // Handle other exceptions
         if (kDebugMode) {
@@ -342,26 +340,6 @@ class SessionRepository {
     }
   }
 
-  // Stream<List<Session>> fetchSessions(String uid) {
-  //   return _userSession
-  //       .where('ownerId', isEqualTo: uid)
-  //       .orderBy('createdAt', descending: true)
-  //       .snapshots()
-  //       .asyncMap<List<Session>>((snapshot) async {
-  //     try {
-  //       final session = snapshot.docs
-  //           .map((doc) => Session.fromMap(doc.data() as Map<String, dynamic>))
-  //           .toList();
-
-  //       return session;
-  //     } catch (e) {
-  //       // Handle errors and return an empty list in case of an error
-  //       print('Error in mapping session: $e');
-  //       return [];
-  //     }
-  //   });
-  // }
-
   Stream<List<Session>> fetchSessions(String uid) {
     return _userSession
         .where('ownerId', isEqualTo: uid)
@@ -370,5 +348,16 @@ class SessionRepository {
         .map<List<Session>>((snapshot) => snapshot.docs
             .map((doc) => Session.fromMap(doc.data() as Map<String, dynamic>))
             .toList());
+  }
+
+  Future<Either<Failure, void>> updateAddTask(Session task) async {
+    try {
+      await _userSession.doc(task.id).update(task.toMap());
+      return right(unit);
+    } on FirebaseException catch (e) {
+      return left(Failure(e.message!));
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
   }
 }

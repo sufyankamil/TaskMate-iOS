@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fpdart/fpdart.dart';
 
 import 'package:routemaster/routemaster.dart';
+import 'package:task_mate/common/constants.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../common/generate_random_colors.dart';
@@ -73,7 +74,6 @@ class TaskController extends StateNotifier<bool> {
     String? description,
     String? date,
     String? time,
-
   }) async {
     state = true;
 
@@ -95,7 +95,7 @@ class TaskController extends StateNotifier<bool> {
       if (existingTasks
           .any((Tasks existingTask) => existingTask.title == title)) {
         state = false;
-        Fluttertoast.showToast(msg: 'Task with the same name already exists.');
+        Fluttertoast.showToast(msg: Constants.taskAlreadyExists);
         return;
       } else {
         final Tasks tasks = Tasks(
@@ -122,7 +122,7 @@ class TaskController extends StateNotifier<bool> {
         result.fold(
           (failure) => Fluttertoast.showToast(msg: failure.message),
           (_) {
-            Fluttertoast.showToast(msg: 'Task Added Successfully');
+            Fluttertoast.showToast(msg: Constants.taskAddedSuccessfully);
             Routemaster.of(context).pop();
           },
         );
@@ -160,7 +160,7 @@ class TaskController extends StateNotifier<bool> {
       if (existingTasks
           .any((Tasks existingTask) => existingTask.title == title)) {
         state = false;
-        Fluttertoast.showToast(msg: 'Task with the same name already exists.');
+        Fluttertoast.showToast(msg: Constants.taskAlreadyExists);
         return;
       } else {
         final Tasks tasks = Tasks(
@@ -187,7 +187,7 @@ class TaskController extends StateNotifier<bool> {
         result.fold(
           (failure) => Fluttertoast.showToast(msg: failure.message),
           (_) {
-            Fluttertoast.showToast(msg: 'Task Added Successfully');
+            Fluttertoast.showToast(msg: Constants.taskAddedSuccessfully);
             Routemaster.of(context).pop();
           },
         );
@@ -231,7 +231,7 @@ class TaskController extends StateNotifier<bool> {
       // Update the document in Firestore
       await _taskRepository.updateTasksWithSubTask(tasks, subTaskTitle);
 
-      Fluttertoast.showToast(msg: 'Sub Task Added Successfully');
+      Fluttertoast.showToast(msg: Constants.subTaskAdded);
 
       // Return a successful result
       return right(unit);
@@ -298,7 +298,7 @@ class TaskController extends StateNotifier<bool> {
 
     result.fold(
       (failure) => Fluttertoast.showToast(msg: failure.message),
-      (_) => Fluttertoast.showToast(msg: 'Task Deleted Successfully'),
+      (_) => Fluttertoast.showToast(msg: Constants.taskDeleted),
     );
   }
 
@@ -307,7 +307,7 @@ class TaskController extends StateNotifier<bool> {
 
     result.fold(
       (failure) => Fluttertoast.showToast(msg: failure.message),
-      (_) => Fluttertoast.showToast(msg: 'Sub Task Deleted Successfully'),
+      (_) => Fluttertoast.showToast(msg: Constants.subTaskDeleted),
     );
   }
 

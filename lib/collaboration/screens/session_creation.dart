@@ -57,7 +57,9 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
 
   setSession() async {
     dynamic activeSession = await SessionManager().get("activeSession");
-    print('Active Session: $activeSession');
+    if (kDebugMode) {
+      print('Active Session: $activeSession');
+    }
 
     if (activeSession != null &&
         activeSession is String &&
@@ -144,14 +146,16 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
             );
           }
         } else {
-          String newSessionId =
-              await sessionController.createNewSession(context);
+          if (context.mounted) {
+            String newSessionId =
+                await sessionController.createNewSession(context);
 
-          setState(() {
-            sessionId = newSessionId;
-          });
+            setState(() {
+              sessionId = newSessionId;
+            });
 
-          _showSessionCreationSuccess(context, sessionId);
+            _showSessionCreationSuccess(context, sessionId);
+          }
         }
       },
       style: ElevatedButton.styleFrom(
@@ -173,12 +177,17 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
 
     final userSessionsData = userSessions.maybeWhen(
       data: (data) {
-        print('Data: $data');
+        if (kDebugMode) {
+          print('Data: $data');
+        }
         final sessionIds = data.map((session) => session.id).toList();
 
-        final createdAt = data.map((session) => session.createdAt).toList();
+        final createdAt =
+            data.map((session) => session.sessionCreatedAt).toList();
         sessionIdss = sessionIds;
-        print('Session IDs: $sessionIdss');
+        if (kDebugMode) {
+          print('Session IDs: $sessionIdss');
+        }
 
         return data;
       },
@@ -231,10 +240,9 @@ class _TaskCollaborationState extends ConsumerState<TaskCollaboration> {
             shrinkWrap: true,
             itemCount: userSessionsData.length,
             itemBuilder: (context, index) {
-              
               Session session = userSessionsData[index];
               String sessionId = session.id;
-              DateTime createdDateTime = session.createdAt.toDate();
+              DateTime createdDateTime = session.sessionCreatedAt.toDate();
 
               String formattedDate =
                   DateFormat('dd-MM-yyyy HH:mm:ss').format(createdDateTime);

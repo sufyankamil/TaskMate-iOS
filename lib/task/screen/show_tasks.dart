@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
+import 'package:task_mate/common/constants.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
 import '../../model/task_model.dart';
@@ -61,7 +62,7 @@ class ShowTasks extends ConsumerWidget {
         context: context,
         builder: (_) => BasicDialogAlert(
           title: Text(
-            'Add to collaborate',
+            Constants.addToCollaboration,
             style: TextStyle(
               color: isDarkTheme
                   ? currentTheme.primaryColorLight
@@ -69,7 +70,7 @@ class ShowTasks extends ConsumerWidget {
             ),
           ),
           content: Text(
-            'Are you sure you want to add this task to sessions to all of your collaborators?',
+            Constants.collaborationConfirmation,
             style: TextStyle(
               color: isDarkTheme
                   ? currentTheme.primaryColorLight
@@ -79,7 +80,7 @@ class ShowTasks extends ConsumerWidget {
           actions: <Widget>[
             BasicDialogAction(
               title: Text(
-                'Cancel',
+                Constants.cancel,
                 style: TextStyle(
                   color: isDarkTheme
                       ? currentTheme.primaryColorLight
@@ -92,7 +93,7 @@ class ShowTasks extends ConsumerWidget {
             ),
             BasicDialogAction(
               title: Text(
-                'Confirm',
+                Constants.confirm,
                 style: TextStyle(
                   color: isDarkTheme
                       ? currentTheme.primaryColorLight
@@ -105,7 +106,7 @@ class ShowTasks extends ConsumerWidget {
                   taskController.updateTodoIsCollaborative(tasks, false);
 
                   Fluttertoast.showToast(
-                      msg: 'Task has been unshared',
+                      msg: Constants.unshareTask,
                       timeInSecForIosWeb: 4,
                       backgroundColor: Colors.red,
                       textColor: Colors.white);
@@ -113,7 +114,7 @@ class ShowTasks extends ConsumerWidget {
                   taskController.updateTodoIsCollaborative(tasks, true);
 
                   Fluttertoast.showToast(
-                      msg: 'Task has been shared in session',
+                      msg: Constants.shareTask,
                       timeInSecForIosWeb: 3,
                       backgroundColor: Colors.green,
                       textColor: Colors.white);
@@ -216,7 +217,8 @@ class ShowTasks extends ConsumerWidget {
                                     onPressed: () {
                                       confrimCollaborate(taskController);
                                     },
-                                    child: const Text('Add to collaborate'),
+                                    child: const Text(
+                                        Constants.addToCollaboration),
                                   ),
                                 ),
                               ],

@@ -80,4 +80,66 @@ class Constants {
       'To proceed with account deletion, please enter CONFIRM below.';
 
   static const String deleteAccountSuccess = 'Account deleted successfully';
+
+  // Constants for Show All Tasks
+  static const String showAllTaskRoute = '/showAllTask';
+  static const String noTaskFound =
+      'No task found, Start adding tasks so that you don\'t forget your important tasks';
+
+  // Controllers constants
+  static const String taskController = 'TaskController';
+  static const String taskAlreadyExists =
+      'Task with the same name already exists.';
+  static const String taskAddedSuccessfully = 'Task Added Successfully';
+  static const String subTaskAdded = 'Sub Task Added Successfully';
+  static const String subTaskAlreadyExists =
+      'Sub Task with the same name already exists.';
+  static const String subTaskDeleted = 'Sub Task Deleted Successfully';
+  static const String taskDeleted = 'Task Deleted Successfully';
+  static const String activeSession = 'activeSession';
+  static const String sessionExpired = 'Session Expired';
+  static const String sessionExpiredContent =
+      'Your session has expired. Please create a new session to continue.';
+  static const String sessionLeft = 'Successfully left the session';
+  static const String sessionTaskUpdated =
+      'Task Updated Successfully in Session';
+  static const String sessionTaskUpdateFailed =
+      'Unable to update task this time';
+
+  // Repository Constants
+  static const String taskRepository = 'TaskRepository';
+  static const String userNotAuth = 'User not authenticated';
+  static const String sessionDontExist = 'Session does not exist';
+  static const String sessionAlreadyExist = 'Session already exist';
+  static const String docNotFound = 'Document not found';
+
+  // Show Task Constants
+  static const String addToCollaboration = 'Add to collaborate';
+  static const String removeFromCollaboration = 'Remove from collaboration';
+  static const String deleteTask = 'Delete Task';
+  static const String deleteTaskContent =
+      'Are you sure you want to delete this task?';
+  static const String deleteTaskConfirm = 'Delete';
+  static const String deleteTaskCancel = 'Cancel';
+  static const String confirm = 'Confirm';
+  static const String collaborationConfirmation =
+      'Are you sure you want to add this task to sessions to all of your collaborators?';
+  static const String unshareTask = 'Task has been unshared';
+  static const String shareTask = 'Task has been shared in session';
+
+  // Ongoing task Constants
+  static const String onGoingAnimation = 'assets/images/task_animation.json';
+  static const String startAddingTask =
+      'Start adding task by clicking + ${Constants.bellowText}';
+  static const String bellowText = 'button below';
+  static const String premiumFeature = 'Premium Feature';
+  static const String premiumText =
+      'Once you have the premium version, you can share it with your friends.';
+  static const String completedTask = 'Completed Task';
+  static const String unshare = 'Unshare';
+  static const String share = 'Share';
+  static const String updateTask = 'Task Updated Successfully';
+  static const String undo = 'Undo';
+  static const String taskCompleted = 'Mark as Completed';
+  static const String editTask = 'Click to edit the task';
 }

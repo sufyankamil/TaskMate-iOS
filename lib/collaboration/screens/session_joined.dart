@@ -268,7 +268,7 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
                   Fluttertoast.showToast(
                     msg: 'Error getting users in session',
                     backgroundColor: Colors.red,
-                  ); 
+                  );
                   return const Text('Error');
                 } else {
                   final List<String> users = snapshot.data ?? [];
@@ -674,11 +674,20 @@ class _SessionJoinedState extends ConsumerState<SessionJoined> {
       onPressed: () async {
         if (_formKey.currentState!.validate()) {
           _formKey.currentState!.save();
-          ref.read(postControllerProvider.notifier).addTaskInSession(
+          // ref.read(postControllerProvider.notifier).addTaskInSession(
+          //       context: context,
+          //       title: titleController.text.trim(),
+          //       description: descriptionController.text.trim(),
+          //       date: formattedDate!,
+          //       time: selectedTime.format(context),
+          //     );
+
+          ref.read(addTaskInSessionProvider.notifier).updateAddTask(
                 context: context,
+                sessionId: widget.sessionId,
                 title: titleController.text.trim(),
                 description: descriptionController.text.trim(),
-                date: formattedDate!,
+                date: formattedDate,
                 time: selectedTime.format(context),
               );
 
