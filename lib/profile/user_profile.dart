@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:routemaster/routemaster.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/provider/failure.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,154 +14,19 @@ import '../auth/repository/auth_repository.dart';
 import '../auth/screens/login_screen.dart';
 import '../common/constants.dart';
 import '../theme/pallete.dart';
+import 'package:flutter/services.dart';
 
-class ProfileDrawer extends ConsumerWidget {
+class ProfileDrawer extends ConsumerStatefulWidget {
   const ProfileDrawer({super.key});
 
-  void navigateToProfile(BuildContext context, String uid) {
-    Routemaster.of(context).push('/profile/$uid');
-  }
-
-  Future<void> logout(WidgetRef ref, BuildContext context) async {
-    ref.read(authControllerProvider.notifier).logout();
-
-    // Pop all routes until reaching the root
-    Navigator.popUntil(context, (route) => route.isFirst);
-
-    // Push the new route after popUntil is completed
-    Future.delayed(Duration.zero, () {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    });
-  }
-
-  void pushToSubscribe(BuildContext context) {
-    Routemaster.of(context).push('/subscribe');
-  }
-
-  void pushToAgent(BuildContext context) {
-    Routemaster.of(context).push('/support');
-  }
-
-  void futurePremium(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text(Constants.upgradeToPremium),
-          content: const Text('This feature is coming soon!'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showHelp(BuildContext context) async {
-    final Uri emailLaunchUri = Uri(
-      scheme: Constants.mailScheme,
-      path: Constants.mailPath,
-      queryParameters: {'subject': Constants.mailSubject},
-    );
-
-    final String urlString = emailLaunchUri.toString();
-
-    if (await canLaunch(urlString)) {
-      await launch(urlString);
-    } else {
-      // If the URL can't be launched, handle the error
-      if (context.mounted) {
-        Theme.of(context).platform == TargetPlatform.android
-            ? showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text(Constants.mailError),
-                  content: const Text(Constants.mailErrorContent),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(Constants.ok),
-                    ),
-                  ],
-                ),
-              )
-            : showDialog(
-                context: context,
-                builder: (context) => CupertinoAlertDialog(
-                  title: const Text(Constants.mailError),
-                  content: const Text(Constants.mailErrorContent),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(Constants.ok),
-                    ),
-                  ],
-                ),
-              );
-      }
-    }
-  }
-
-  void showSuggestionsDialog(BuildContext context) {
-    Theme.of(context).platform == TargetPlatform.android
-        ? showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text(Constants.suggestions),
-              content: const Text(Constants.suggestionsContent),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(Constants.ok),
-                ),
-              ],
-            ),
-          )
-        : showDialog(
-            context: context,
-            builder: (context) => CupertinoAlertDialog(
-              title: const Text(Constants.suggestions),
-              content: const Text(Constants.suggestionsContent),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(Constants.ok),
-                ),
-              ],
-            ),
-          );
-  }
-
-  Future<void> logOUT(WidgetRef ref, BuildContext context) async {
-    try {
-      await ref.read(authRepositoryProvider).logoutWithEmailAndPassword();
-      if (context.mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
-        );
-      }
-    } catch (e) {
-      // Handle logout error
-      Fluttertoast.showToast(
-        msg: 'Logout error: $e',
-        backgroundColor: Colors.red,
-        timeInSecForIosWeb: 5,
-      );
-    }
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _ProfileDrawerState createState() => _ProfileDrawerState();
+}
+
+class _ProfileDrawerState extends ConsumerState<ProfileDrawer>
+    with TickerProviderStateMixin {
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
 
     if (user == null) return const CircularProgressIndicator.adaptive();
@@ -173,6 +39,144 @@ class ProfileDrawer extends ConsumerWidget {
       themeProvider.toggleTheme();
     }
 
+    Future<void> logout(WidgetRef ref, BuildContext context) async {
+      ref.read(authControllerProvider.notifier).logout();
+
+      // Pop all routes until reaching the root
+      Navigator.popUntil(context, (route) => route.isFirst);
+
+      // Push the new route after popUntil is completed
+      Future.delayed(Duration.zero, () {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      });
+    }
+
+    void pushToSubscribe(BuildContext context) {
+      Routemaster.of(context).push('/subscribe');
+    }
+
+    void pushToAgent(BuildContext context) {
+      Routemaster.of(context).push('/support');
+    }
+
+    void futurePremium(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: const Text(Constants.upgradeToPremium),
+            content: const Text('This feature is coming soon!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    void showHelp(BuildContext context) async {
+      final Uri emailLaunchUri = Uri(
+        scheme: Constants.mailScheme,
+        path: Constants.mailPath,
+        queryParameters: {'subject': Constants.mailSubject},
+      );
+
+      final String urlString = emailLaunchUri.toString();
+
+      if (await canLaunch(urlString)) {
+        await launch(urlString);
+      } else {
+        // If the URL can't be launched, handle the error
+        if (context.mounted) {
+          Theme.of(context).platform == TargetPlatform.android
+              ? showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text(Constants.mailError),
+                    content: const Text(Constants.mailErrorContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(Constants.ok),
+                      ),
+                    ],
+                  ),
+                )
+              : showDialog(
+                  context: context,
+                  builder: (context) => CupertinoAlertDialog(
+                    title: const Text(Constants.mailError),
+                    content: const Text(Constants.mailErrorContent),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(Constants.ok),
+                      ),
+                    ],
+                  ),
+                );
+        }
+      }
+    }
+
+    void showSuggestionsDialog(BuildContext context) {
+      Theme.of(context).platform == TargetPlatform.android
+          ? showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text(Constants.suggestions),
+                content: const Text(Constants.suggestionsContent),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(Constants.ok),
+                  ),
+                ],
+              ),
+            )
+          : showDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text(Constants.suggestions),
+                content: const Text(Constants.suggestionsContent),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(Constants.ok),
+                  ),
+                ],
+              ),
+            );
+    }
+
+    Future<void> logOUT(WidgetRef ref, BuildContext context) async {
+      try {
+        await ref.read(authRepositoryProvider).logoutWithEmailAndPassword();
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
+          );
+        }
+      } catch (e) {
+        // Handle logout error
+        Fluttertoast.showToast(
+          msg: 'Logout error: $e',
+          backgroundColor: Colors.red,
+          timeInSecForIosWeb: 5,
+        );
+      }
+    }
+
     return Drawer(
       child: SafeArea(
         child: SingleChildScrollView(
@@ -183,6 +187,7 @@ class ProfileDrawer extends ConsumerWidget {
                 automaticallyImplyLeading: true,
                 backgroundColor:
                     isDark ? Colors.transparent : Colors.transparent,
+                // backgroundColor: currentTheme.backgroundColor,
               ),
               const SizedBox(height: 20),
               CircleAvatar(
@@ -239,7 +244,7 @@ class ProfileDrawer extends ConsumerWidget {
                 leading: const Icon(Icons.shield_moon_outlined),
                 title: const Text(Constants.switchTheme),
                 onTap: () {
-                  toggleTheme(ref);
+                  switchTheme(context, ref);
                 },
               ),
               ListTile(
@@ -634,5 +639,148 @@ class ProfileDrawer extends ConsumerWidget {
         );
       },
     );
+  }
+
+  switchTheme(BuildContext context, WidgetRef ref) {
+    final themeProvider = ref.watch(themeNotifierProvider.notifier);
+
+    void toggleTheme(WidgetRef ref) {
+      themeProvider.toggleTheme();
+    }
+
+    IconData currentIcon = Theme.of(context).brightness == Brightness.light
+        ? Icons.wb_sunny // Default icon for light theme
+        : Icons.nightlight_round; // Default icon for dark theme
+
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: const EdgeInsets.all(20.0),
+              height: 460.0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Center(
+                    child: Container(
+                      width: 200,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).backgroundColor,
+                      ),
+                      child: Icon(
+                        currentIcon,
+                        size: 70,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 25.0),
+                  const Text(
+                    'Choose a Style',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  const Text(
+                    'Pop or Subtle, Light or Dark, you choose!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
+                  const Text(
+                    'Customize your experience',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0),
+                          end: const Offset(0, 0.08),
+                        ).animate(CurvedAnimation(
+                          parent: AnimationController(
+                            vsync: this,
+                            duration: const Duration(milliseconds: 500),
+                          ),
+                          curve: Curves.easeInOut,
+                        )),
+                        child: ChoiceChip(
+                          label: const Text('System'),
+                          selected: Theme.of(context).brightness ==
+                                  Brightness.light &&
+                              Theme.of(context).platform != TargetPlatform.iOS,
+                          onSelected: (_) {
+                            setThemeMode(context, ThemeMode.system);
+                          },
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: const Text('Light'),
+                        selected: Theme.of(context).brightness ==
+                                Brightness.light &&
+                            Theme.of(context).platform == TargetPlatform.iOS,
+                        onSelected: (_) {
+                          // Check if the current theme is already light
+                          if (!(Theme.of(context).brightness ==
+                                  Brightness.light &&
+                              Theme.of(context).platform ==
+                                  TargetPlatform.iOS)) {
+                            toggleTheme(ref);
+                            setState(() {
+                              // Update the icon immediately
+                              currentIcon = Icons.wb_sunny;
+                            });
+                            HapticFeedback.lightImpact();
+                          }
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('Dark'),
+                        selected:
+                            Theme.of(context).brightness == Brightness.dark,
+                        onSelected: (_) {
+                          // Check if the current theme is already dark
+                          if (!(Theme.of(context).brightness ==
+                              Brightness.dark)) {
+                            toggleTheme(ref);
+                            setState(() {
+                              // Update the icon immediately
+                              currentIcon = Icons.nightlight_round;
+                            });
+                          }
+                          HapticFeedback.lightImpact();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          });
+        });
+  }
+
+  void setThemeMode(BuildContext context, ThemeMode mode) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('theme_mode',
+        mode.toString()); // Save the selected theme mode to SharedPreferences
+    // Notify the framework about the theme mode change
+    (context as Element).markNeedsBuild();
   }
 }
