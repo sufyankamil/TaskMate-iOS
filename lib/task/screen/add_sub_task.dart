@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:routemaster/routemaster.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
 import '../../../model/task_model.dart';
@@ -75,12 +77,12 @@ class _SubTaskState extends ConsumerState<SubTask> {
                           Tasks tasks = taskDetails.value;
 
                           // Call the updateTasksWithSubTask function
-                          ref
-                              .read(postControllerProvider.notifier)
-                              .updateTasksWithSubTask(
-                                tasks,
-                                titleController.text,
-                              );
+                          // ref
+                          //     .read(postControllerProvider.notifier)
+                          //     .updateTasksWithSubTask(
+                          //       tasks,
+                          //       titleController.text,
+                          //     );
                         }
                       }
                       titleController.clear();

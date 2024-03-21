@@ -54,6 +54,7 @@ dependencies:
   flutter_session_manager: ^1.0.3
   zego_uikit_prebuilt_video_conference: ^2.7.0
   flutter_dotenv: ^5.1.0
+  carousel_slider: ^4.2.1
 
 dev_dependencies:
   flutter_test:

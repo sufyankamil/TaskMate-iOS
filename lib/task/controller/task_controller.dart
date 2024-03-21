@@ -72,6 +72,7 @@ class TaskController extends StateNotifier<bool> {
     required BuildContext context,
     required String title,
     String? description,
+    String? subTitle,
     String? date,
     String? time,
   }) async {
@@ -101,6 +102,8 @@ class TaskController extends StateNotifier<bool> {
         final Tasks tasks = Tasks(
           id: taskId,
           title: title,
+          description: description ?? '',
+          subTitle: subTitle ?? ' ',
           color: colors.value.toRadixString(16).padLeft(8, '0'),
           createdAt: DateTime.now(),
           uid: uid,
@@ -216,12 +219,16 @@ class TaskController extends StateNotifier<bool> {
   Future<Either<Failure, void>> updateTasksWithSubTask(
     Tasks tasks,
     String subTaskTitle,
+    String subTaskDescription,
   ) async {
     try {
       // Create a new Todo object with the provided title
       Todo newSubTask = Todo(
         id: const Uuid().v1(),
         title: subTaskTitle,
+        description: subTaskDescription,
+        isPending: true,
+        inProgress: false,
         isDone: false,
       );
 
@@ -244,10 +251,42 @@ class TaskController extends StateNotifier<bool> {
     }
   }
 
+  Future<void> updateTodoIsPending(
+      Tasks task, Todo todo, bool isPending) async {
+    try {
+      // Update local state
+      todo.isPending = isPending;
+      todo.inProgress = false;
+      todo.isDone = false;
+      // Update Firestore document
+      await _taskRepository.updateTodoIsDone(task, todo);
+    } catch (e) {
+      // Handle other exceptions
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  Future<void> updateTodoInProgress(
+      Tasks task, Todo todo, bool inProgress) async {
+    try {
+      // Update local state
+      todo.inProgress = inProgress;
+      todo.isPending = false;
+      todo.isDone = false;
+      // Update Firestore document
+      await _taskRepository.updateTodoIsDone(task, todo);
+    } catch (e) {
+      // Handle other exceptions
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
   Future<void> updateTodoIsDone(Tasks task, Todo todo, bool isDone) async {
     try {
       // Update local state
       todo.isDone = isDone;
+      todo.isPending = false;
+      todo.inProgress = false;
       // Update Firestore document
       await _taskRepository.updateTodoIsDone(task, todo);
     } catch (e) {

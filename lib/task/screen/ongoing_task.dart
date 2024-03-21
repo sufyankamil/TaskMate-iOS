@@ -5,7 +5,6 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lottie/lottie.dart';
 import 'package:routemaster/routemaster.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:task_mate/common/constants.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 
@@ -16,7 +15,10 @@ import '../controller/task_controller.dart';
 class OnGoingTask extends ConsumerStatefulWidget {
   final String taskId;
 
-  const OnGoingTask({super.key, required this.taskId});
+  final int selectedChoiceIndex;
+
+  const OnGoingTask(
+      {super.key, required this.taskId, required this.selectedChoiceIndex});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _OnGoingTaskState();
@@ -88,6 +90,8 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
 
     List<String> todoTitles = [];
 
+    List<String> todosDescription = [];
+
     var todoIsDoneStatus = <bool>[];
 
     final taskController = ref.watch(taskControllerProvider.notifier);
@@ -104,6 +108,8 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
 
       // Get the titles of todos
       todoTitles = tasks.todos.map((todo) => todo.title).toList();
+
+      todosDescription = tasks.todos.map((todo) => todo.description).toList();
 
       // Get the todos isDone sttaus
       todoIsDoneStatus = tasks.todos.map((todo) => todo.isDone).toList();
@@ -167,18 +173,9 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                inProgressCount(todosLength),
-                const Spacer(),
-                todoIsDoneStatus
-                        .every((element) => element == true && todosLength > 0)
-                    ? completedTaskPage(navigateToCompletedTask, taskController)
-                    : const SizedBox()
-              ],
-            ),
             divider(),
-            slidableWidget(todoTitles, task, taskController, doNothing),
+            slidableWidget(
+                todoTitles, todosDescription, task, taskController, doNothing),
           ],
         ),
       );
@@ -207,7 +204,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
     return OutlinedButton.icon(
       icon: Icon(Icons.check_circle_outline,
           color: Theme.of(context).primaryColor),
-      label: Text(Constants.completedTask),
+      label: const Text(Constants.completedTask),
       onPressed: () {
         navigateToCompletedTask(context, widget.taskId);
         taskController.changeChipIndex(1);
@@ -227,7 +224,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
     return ListView.separated(
       shrinkWrap: true, // Add shrinkWrap
       physics:
-          NeverScrollableScrollPhysics(), // Add this to prevent the ListView from scrolling independently
+          const NeverScrollableScrollPhysics(), // Add this to prevent the ListView from scrolling independently
       itemCount: todoTitles.length,
       separatorBuilder: (context, index) =>
           Divider(color: Theme.of(context).dividerColor),
@@ -248,7 +245,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
     List<Todo> todos = tasks?.todos ?? [];
     return Slidable(
       key: Key('slidable_task_item_$index'),
-      // ... rest of your slidable logic here ...
       child: ListTile(
         leading: Text(
           '${index + 1}.',
@@ -263,9 +259,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           icon: Icon(todos[index].isDone
               ? Icons.check_circle
               : Icons.radio_button_unchecked),
-          onPressed: () {
-            // toggle the todo isDone state here
-          },
+          onPressed: () {},
         ),
       ),
     );
@@ -326,6 +320,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
 
   Expanded slidableWidget(
       List<String> todoTitles,
+      List<String> todosDescription,
       AsyncValue<Tasks> task,
       TaskController taskController,
       void Function(BuildContext context) doNothing) {
@@ -335,9 +330,21 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
         itemBuilder: (context, index) {
           Tasks? tasks = task.value;
           List<Todo> todos = tasks?.todos ?? [];
+          Todo todo = todos[index];
           return Builder(builder: (BuildContext builderContext) {
-            return mainSlider(
-                index, taskController, todos, doNothing, todoTitles, tasks);
+            if (widget.selectedChoiceIndex == 0 && todo.isPending == true) {
+              return listOfSubTask(todoTitles, todosDescription, index, todos,
+                  taskController, tasks);
+            } else if (widget.selectedChoiceIndex == 1 &&
+                todo.inProgress == true) {
+              return listOfSubTask(todoTitles, todosDescription, index, todos,
+                  taskController, tasks);
+            } else if (widget.selectedChoiceIndex == 2 && todo.isDone == true) {
+              return listOfSubTask(todoTitles, todosDescription, index, todos,
+                  taskController, tasks);
+            } else {
+              return const SizedBox();
+            }
           });
         },
       ),
@@ -350,6 +357,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       List<Todo> todos,
       void Function(BuildContext context) futurePremium,
       List<String> todoTitles,
+      List<String> todosDescription,
       Tasks? tasks) {
     return Slidable(
       key: Key('unique_slidable_key_$index'),
@@ -396,6 +404,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
+          /////
           SlidableAction(
             flex: 2,
             onPressed: (context) {
@@ -429,46 +438,222 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
           ),
         ],
       ),
-      child: listOfSubTask(todoTitles, index),
+      child: listOfSubTask(
+          todoTitles, todosDescription, index, todos, taskController, tasks),
     );
   }
 
-  Container listOfSubTask(List<String> todoTitles, int index) {
-    final _key1 = GlobalKey();
+  showCupertinoModal(
+    BuildContext context,
+    List<Todo> todos,
+    List<String> todoTitles,
+    List<String> todosDescription,
+    TaskController taskController,
+    Tasks? tasks,
+    int index,
+  ) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Move Card?'),
+          content: const Text(
+              'If you move this card, you can see this card is in progress!'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                int selectedChoiceIndex = widget.selectedChoiceIndex;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: 8.0,
-          right: 8.0,
-          top: 8.0,
-        ),
-        child: Row(
-          children: [
-            Text(
-              '${todoTitles.indexOf(todoTitles[index]) + 1}.',
-              style: TextStyle(
-                fontSize: 12.0.textPercentage,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
+                if (todos.isNotEmpty) {
+                  Todo todo = todos[todoTitles.indexOf(todoTitles[index])];
+
+                  // Perform action based on the selected choice
+                  switch (selectedChoiceIndex) {
+                    case 0:
+                      // Update todo as pending
+                      taskController.updateTodoInProgress(tasks!, todo, true);
+                      Navigator.of(context);
+                      break;
+                    case 1:
+                      // Update todo as in progress
+                      taskController.updateTodoIsDone(tasks!, todo, true);
+                      Navigator.of(context);
+                      break;
+
+                    default:
+                      break;
+                  }
+
+                  try {
+                    taskController.updateKarma(tasks!);
+                  } catch (e) {
+                    Fluttertoast.showToast(msg: e.toString());
+                  }
+
+                  Fluttertoast.showToast(msg: Constants.updateTask);
+                  setState(() {});
+                }
+              },
+              child: const Text('Move Card'),
             ),
-            Expanded(
-              child: Showcase(
-                key: _key1,
-                description: Constants.editTask,
-                overlayColor: Colors.blueGrey,
-                child: ListTile(
-                  title: Text(todoTitles[index]),
-                ),
-              ),
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Padding listOfSubTask(
+    List<String> todoTitles,
+    List<String> todosDescription,
+    int index,
+    List<Todo> todos,
+    TaskController taskController,
+    Tasks? tasks,
+  ) {
+    Todo todo = todos[index];
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        height: 35.0.widthPercent,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: const Color(0xFF252E41)),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: 8.0,
+            right: 8.0,
+            top: 8.0,
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      title: Text(todoTitles[index]),
+                      subtitle: Text(todosDescription[index], maxLines: 1),
+                      titleTextStyle: const TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      subtitleTextStyle: const TextStyle(
+                        fontSize: 14.0,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 3.0),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.attach_file,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '4',
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Icon(
+                            Icons.chat,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '2',
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          SizedBox(width: 40.0.widthPercent),
+                          ElevatedButton(
+                            onPressed: todo.isDone
+                                ? null
+                                : () {
+                                    showCupertinoModal(
+                                      context,
+                                      todos,
+                                      todoTitles,
+                                      todosDescription,
+                                      taskController,
+                                      tasks,
+                                      index,
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            child: Text(
+                              todo.isDone ? "Complete" : "Move",
+                              style: TextStyle(
+                                fontSize: 10.0.textPercentage,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
+
+    // return Container(
+    //   decoration: BoxDecoration(
+    //     borderRadius: BorderRadius.circular(10),
+    //   ),
+    //   child: Padding(
+    //     padding: const EdgeInsets.only(
+    //       left: 8.0,
+    //       right: 8.0,
+    //       top: 8.0,
+    //     ),
+    //     child: Row(
+    //       children: [
+    //         Text(
+    //           '${todoTitles.indexOf(todoTitles[index]) + 1}.',
+    //           style: TextStyle(
+    //             fontSize: 12.0.textPercentage,
+    //             fontWeight: FontWeight.bold,
+    //             color: Colors.grey,
+    //           ),
+    //         ),
+    //         Expanded(
+    //           child: ListTile(
+    //             title: Text(todoTitles[index]),
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 }

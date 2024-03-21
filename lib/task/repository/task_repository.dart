@@ -101,6 +101,26 @@ class TaskRepository {
     }
   }
 
+  Future<void> updateTodoIsPending(Tasks task, Todo todo) async {
+     try {
+      final docReference =
+          FirebaseFirestore.instance.collection('tasks').doc(task.id);
+
+      // Find the index of the todo in the todos list
+      int todoIndex = task.todos.indexWhere((t) => t.title == todo.title);
+
+      // Update the todo at the specified index
+      task.todos[todoIndex] = todo;
+
+      // Update Firestore document with the modified todos list
+      await docReference.update({
+        'todos': task.todos.map((t) => t.toMap()).toList(),
+      });
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
   Future<void> updateTodoIsDone(Tasks task, Todo todo) async {
     try {
       final docReference =

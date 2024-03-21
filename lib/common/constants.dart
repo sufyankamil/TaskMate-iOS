@@ -144,4 +144,14 @@ class Constants {
   static const String undo = 'Undo';
   static const String taskCompleted = 'Mark as Completed';
   static const String editTask = 'Click to edit the task';
+
+  // Detail task
+  static const String taskDetail = 'Detail Project';
+  static const String taskDetailDescription = 'Description';
+  static const String taskDescriptionDetail =
+      'OKR is a strategic framework, whereas KPIs are measurements that exist within a framework and a KPI is usually a single data point, so you will find cases where there’s overlap. OKRs are a way to set goals and measure progress, while KPIs are a way to track performance and progress.';
+  static const String taskDueDate = 'Due Date';
+  static const String taskPeopleInvolved = '12 People';
+  static const String project = 'Project';
+
 }

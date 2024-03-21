@@ -1,15 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:routemaster/routemaster.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
+import 'package:task_mate/common/constants.dart';
 import 'package:task_mate/core/utils/extensions.dart';
 import 'package:task_mate/task/screen/ongoing_task.dart';
 
 import '../../../model/task_model.dart';
 import '../../../theme/pallete.dart';
+import '../../auth/controller/auth_controller.dart';
 import '../controller/task_controller.dart';
 
 class DetailedPage extends ConsumerStatefulWidget {
@@ -22,6 +24,8 @@ class DetailedPage extends ConsumerStatefulWidget {
 }
 
 class _DetailedPageState extends ConsumerState<DetailedPage> {
+  int selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     final currentTheme = ref.watch(themeNotifierProvider);
@@ -114,7 +118,7 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task Detail'),
+        title: const Text(Constants.taskDetail),
         actions: [
           IconButton(
             onPressed: () {
@@ -135,48 +139,100 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            ref.watch(taskByIdProvider(widget.taskId)).when(
-                  data: (data) => Form(
-                    key: formKeys,
-                    child: SizedBox(
-                      height: 40.0.widthPercent,
-                      // height: MediaQuery.of(context).size.height,
-                      width: double.infinity,
-                      child: ListView(
-                        children: [
-                          SizedBox(height: 6.0.widthPercent),
-                          taskTitle(stringToColor, data),
-                          const SizedBox(height: 16.0),
-                          stepper(data, isTodosEmpty, getDoneTodo,
-                              stringToColor, currentTheme),
-                          const SizedBox(height: 10.0),
-                          Center(
-                            child: Text(
-                              '${taskCompleted(data)}/${data.todos.length} Tasks Completed',
-                              style: TextStyle(
-                                overflow: TextOverflow.clip,
-                                fontSize: 12.0.textPercentage,
-                                color: Colors.grey,
+            Card(
+              color: Colors.grey,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              elevation: 4,
+              child: const SizedBox(
+                width: double.infinity,
+                height: 200,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Column(
+              children: [
+                ref.watch(taskByIdProvider(widget.taskId)).when(
+                      data: (data) => Form(
+                        key: formKeys,
+                        child: SizedBox(
+                          height: 77.0.widthPercent,
+                          width: double.infinity,
+                          child: ListView(
+                            children: [
+                              SizedBox(height: 3.0.widthPercent),
+                              taskTitle(stringToColor, data),
+                              const SizedBox(height: 6.0),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16.0),
+                                child: Text(
+                                  data.subTitle,
+                                  style: TextStyle(
+                                    overflow: TextOverflow.clip,
+                                    fontSize: 12.0.textPercentage,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 20.0),
+                              taskdescription(stringToColor, data),
+                              const SizedBox(height: 16.0),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 9.0),
+                                child: Row(
+                                  children: [
+                                    taskDue(stringToColor, data),
+                                    SizedBox(width: 30.0.widthPercent),
+                                    peopleInvolved(stringToColor, data),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16.0),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  stepper(data, isTodosEmpty, getDoneTodo,
+                                      stringToColor, currentTheme),
+                                  SizedBox(width: 10.0.widthPercent),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        top: 10,
+                                        left: 10,
+                                        bottom: 10,
+                                        right: 10),
+                                    child: Text(
+                                      '${data.todos.isEmpty ? '0' : ((taskCompleted(data) / data.todos.length) * 100).toStringAsFixed(0)}% ',
+                                      style: TextStyle(
+                                        overflow: TextOverflow.clip,
+                                        fontSize: 12.0.textPercentage,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16.0),
+                              project(stringToColor),
+                              // const SizedBox(height: 16.0),
+                              // choices(stringToColor, data),
+                            ],
                           ),
-                        ],
+                        ),
+                      ),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      ),
+                      error: (error, stackTrace) => Center(
+                        child: Text(error.toString()),
                       ),
                     ),
-                  ),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  ),
-                  error: (error, stackTrace) => Center(
-                    child: Text(error.toString()),
-                  ),
+                choices(stringToColor),
+                OnGoingTask(
+                  taskId: widget.taskId,
+                  selectedChoiceIndex: selectedIndex,
                 ),
-            const SizedBox(height: 10.0),
-            ShowCaseWidget(
-              autoPlay: true,
-              builder: Builder(
-                builder: (context) => OnGoingTask(taskId: widget.taskId),
-              ),
+              ],
             ),
           ],
         ),
@@ -191,13 +247,179 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                 }
 
                 if (userDataList.isNotEmpty) {
-                  navigateToSubTask(context, widget.taskId);
+                  addSubTask(context, ref);
                 }
               },
               child: const Icon(Icons.add),
             )
           : const SizedBox(),
     );
+  }
+
+  void addSubTask(BuildContext context, WidgetRef ref) {
+    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+    TextEditingController titleController = TextEditingController();
+
+    TextEditingController descriptionController = TextEditingController();
+
+    String? titleErrorText;
+
+    String? descriptionErrorText;
+
+    String title = '';
+
+    final taskDetails = ref.watch(taskByIdProvider(widget.taskId));
+
+    // Check the status of the AsyncData
+    if (taskDetails is AsyncData<Tasks>) {
+      // Access the value inside AsyncData
+      Tasks tasks = taskDetails.value;
+
+      // Access specific properties of the Tasks object
+      title = tasks.title;
+    }
+
+    showCupertinoModalPopup(
+        context: context,
+        builder: (BuildContext builder) {
+          return CupertinoPopupSurface(
+            child: Material(
+              child: Form(
+                key: _formKey,
+                child: Container(
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  height: 200.0.widthPercent,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Routemaster.of(context).pop();
+                              },
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'Add Sub Task to project: $title',
+                        style: TextStyle(
+                          fontFamily: 'MyFont',
+                          fontSize: 6.3.widthPercent,
+                          color: Colors.white,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.all(18.0),
+                        child: TextFormField(
+                          controller: titleController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            hintText: 'Sub Task Title',
+                            hintStyle: const TextStyle(
+                              color: Colors.white,
+                            ),
+                            errorText: titleErrorText,
+                            errorStyle: const TextStyle(
+                              color: Colors.red,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Title is required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(18.0),
+                        child: TextFormField(
+                          controller: descriptionController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            hintText: 'Sub Task Description',
+                            hintStyle: const TextStyle(
+                              color: Colors.white,
+                            ),
+                            errorText: descriptionErrorText,
+                            errorStyle: const TextStyle(
+                              color: Colors.red,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Description is required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            _formKey.currentState!.save();
+                            if (taskDetails is AsyncData<Tasks>) {
+                              // Access the value inside AsyncData
+                              Tasks tasks = taskDetails.value;
+
+                              // Call the updateTasksWithSubTask function
+                              ref
+                                  .read(postControllerProvider.notifier)
+                                  .updateTasksWithSubTask(
+                                    tasks,
+                                    titleController.text,
+                                    descriptionController.text,
+                                  );
+                            }
+                            titleController.clear();
+                            descriptionController.clear();
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          minimumSize: Size(50.0.widthPercent, 40),
+                          maximumSize: Size(60.0.widthPercent, 40),
+                        ),
+                        child: Text(
+                          'Add Sub Task',
+                          style: TextStyle(
+                            fontSize: 10.0.textPercentage,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
   }
 
   Padding stepper(
@@ -208,46 +430,34 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
       ThemeData currentTheme) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16.0.widthPercent,
-        right: 16.0.widthPercent,
         top: 3.0.widthPercent,
+        left: 3.0.widthPercent,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '${data.todos.length} Tasks',
-            style: TextStyle(
-              fontSize: 12.0.textPercentage,
-              color: Colors.grey,
-            ),
+      child: SizedBox(
+        width: 70.0.widthPercent,
+        child: StepProgressIndicator(
+          totalSteps: isTodosEmpty(data) ? 1 : data.todos.length,
+          currentStep: isTodosEmpty(data) ? 0 : getDoneTodo(data),
+          size: 18,
+          roundedEdges: const Radius.circular(10),
+          padding: 0,
+          selectedGradientColor: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              stringToColor(data.color!).withOpacity(0.5),
+              stringToColor(data.color!),
+            ],
           ),
-          SizedBox(width: 6.0.widthPercent),
-          Expanded(
-            child: StepProgressIndicator(
-              totalSteps: isTodosEmpty(data) ? 1 : data.todos.length,
-              currentStep: isTodosEmpty(data) ? 0 : getDoneTodo(data),
-              size: 5,
-              padding: 0,
-              selectedGradientColor: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  stringToColor(data.color!).withOpacity(0.5),
-                  stringToColor(data.color!),
-                ],
-              ),
-              unselectedGradientColor: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  currentTheme.primaryColorLight,
-                  currentTheme.primaryColorLight.withOpacity(0.5),
-                ],
-              ),
-            ),
+          unselectedGradientColor: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              currentTheme.primaryColorLight,
+              currentTheme.primaryColorLight.withOpacity(0.5),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -255,30 +465,169 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
   Padding taskTitle(
       Color Function(String colorString) stringToColor, Tasks data) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8.0.widthPercent),
+      padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+      child: Text(data.title,
+          style: TextStyle(
+            overflow: TextOverflow.clip,
+            fontSize: 15.0.textPercentage,
+            fontWeight: FontWeight.bold,
+          ),
+          softWrap: true),
+    );
+  }
+
+  Padding taskdescription(
+      Color Function(String colorString) stringToColor, Tasks data) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            Constants.taskDetailDescription,
+            style: TextStyle(
+              overflow: TextOverflow.clip,
+              fontSize: 12.0.textPercentage,
+              color: Colors.white,
+            ),
+            softWrap: true,
+          ),
+          const SizedBox(height: 6.0),
+          Text(data.description,
+              style: TextStyle(
+                overflow: TextOverflow.clip,
+                fontSize: 12.0.textPercentage,
+                color: Colors.grey,
+                fontWeight: FontWeight.normal,
+              ),
+              softWrap: true),
+        ],
+      ),
+    );
+  }
+
+  Padding taskDue(
+      Color Function(String colorString) stringToColor, Tasks data) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 2.0.widthPercent),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.person_remove_alt_1_sharp,
-                    color: stringToColor(data.color!),
-                  ),
-                  SizedBox(width: 5.0.widthPercent),
-                  Text(data.title,
-                      style: TextStyle(
-                        overflow: TextOverflow.clip,
-                        fontSize: 10.0.textPercentage,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      softWrap: true),
-                ],
+              Text(
+                Constants.taskDueDate,
+                style: TextStyle(
+                  overflow: TextOverflow.clip,
+                  fontSize: 12.0.textPercentage,
+                  color: Colors.white,
+                ),
+                softWrap: true,
               ),
+              const SizedBox(height: 6.0),
+              Text(data.date,
+                  style: TextStyle(
+                    overflow: TextOverflow.clip,
+                    fontSize: 12.0.textPercentage,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  softWrap: true),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  SingleChildScrollView peopleInvolved(
+      Color Function(String colorString) stringToColor, Tasks data) {
+    final user = ref.watch(userProvider);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          Text(
+            Constants.taskPeopleInvolved,
+            style: TextStyle(
+              overflow: TextOverflow.clip,
+              fontSize: 12.0.textPercentage,
+              color: Colors.grey,
+            ),
+            softWrap: true,
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 10,
+                  backgroundImage: NetworkImage(
+                    user!.photoUrl,
+                  ),
+                ),
+                Positioned(
+                  left: 10,
+                  child: Container(
+                    constraints:
+                        const BoxConstraints(minWidth: 4, minHeight: 4),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundImage: NetworkImage(
+                            user.photoUrl,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding project(Color Function(String colorString) stringToColor) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+      child: Text(Constants.project,
+          style: TextStyle(
+            overflow: TextOverflow.clip,
+            fontSize: 12.0.textPercentage,
+            fontWeight: FontWeight.bold,
+          ),
+          softWrap: true),
+    );
+  }
+
+  Padding choices(Color Function(String colorString) stringToColor) {
+    List<String> choices = ['To-Do', 'In Progress', 'Completed'];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.0.widthPercent),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Wrap(
+            spacing: 25.0,
+            children: List<Widget>.generate(choices.length, (int index) {
+              return ChoiceChip(
+                label: Text(choices[index]),
+                selected: selectedIndex == index,
+                selectedColor: Colors.blue,
+                onSelected: (bool selected) {
+                  setState(() {
+                    selectedIndex = selected ? index : selectedIndex;
+                    print('Selected Index: $selectedIndex');
+                  });
+                },
+              );
+            }),
           ),
         ],
       ),

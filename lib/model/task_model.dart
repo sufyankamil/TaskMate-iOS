@@ -3,9 +3,9 @@ import 'package:task_mate/model/todo.dart';
 class Tasks {
   final String id;
   final String title;
-  // final Icon? icon;
+  final String description;
   final String? color;
-  // final List<dynamic> todos;
+  final String subTitle;
   final List<Todo> todos;
   final DateTime createdAt;
   final String uid;
@@ -20,7 +20,8 @@ class Tasks {
   Tasks({
     required this.id,
     required this.title,
-    // this.icon,
+    this.description = '',
+   this.subTitle = '',
     this.color,
     this.todos = const [],
     required this.createdAt,
@@ -37,9 +38,9 @@ class Tasks {
   Tasks copyWith({
     String? id,
     String? title,
-    // Icon? icon,
+    String? description,
     String? color,
-    // List<dynamic>? todos,
+    String? subTitle,
     List<Todo>? todos,
     bool? isPending,
     bool? isCompleted,
@@ -52,7 +53,8 @@ class Tasks {
     return Tasks(
       id: id ?? this.id,
       title: title ?? this.title,
-      // icon: icon ?? this.icon,
+      description: description ?? this.description,
+      subTitle: subTitle ?? this.subTitle,
       color: color ?? this.color,
       todos: todos ?? this.todos,
       createdAt: createdAt,
@@ -71,8 +73,9 @@ class Tasks {
     return {
       'id': id,
       'title': title,
-      // 'icon': icon,
+      'description': description,
       'color': color,
+      'subTitle': subTitle,
       'todos': todos,
       'createdAt': createdAt,
       'uid': uid,
@@ -90,9 +93,9 @@ class Tasks {
     return Tasks(
       id: map['id'],
       title: map['title'],
-      // icon: map['icon'],
+      description: map['description'],
       color: map['color'],
-      // todos: map['todos'],
+      subTitle: map['subTitle'],
       todos: List<Todo>.from(map['todos']?.map((x) => Todo.fromMap(x))),
       createdAt: map['createdAt'].toDate(),
       uid: map['uid'],
@@ -108,7 +111,7 @@ class Tasks {
 
   @override
   String toString() {
-    return 'Tasks(id: $id, title: $title, color: $color, todos: $todos, createdAt: $createdAt, uid: $uid, isPending: $isPending, isCompleted: $isCompleted, karma: $karma, isPremium: $isPremium, isCollaborative: $isCollaborative, date: $date, time: $time)';
+    return 'Tasks(id: $id, title: $title, description: $description, color: $color, $subTitle: $subTitle, todos: $todos, createdAt: $createdAt, uid: $uid, isPending: $isPending, isCompleted: $isCompleted, karma: $karma, isPremium: $isPremium, isCollaborative: $isCollaborative, date: $date, time: $time)';
   }
 
   @override
@@ -118,7 +121,8 @@ class Tasks {
     return other is Tasks &&
         other.id == id &&
         other.title == title &&
-        // other.icon == icon &&
+        other.description == description &&
+        other.subTitle == subTitle &&
         other.color == color &&
         other.todos == todos &&
         other.createdAt == createdAt &&
@@ -136,7 +140,8 @@ class Tasks {
   int get hashCode {
     return id.hashCode ^
         title.hashCode ^
-        // icon.hashCode ^
+        description.hashCode ^
+        subTitle.hashCode ^
         color.hashCode ^
         todos.hashCode ^
         createdAt.hashCode ^

@@ -72,20 +72,48 @@ class _HomeState extends ConsumerState<Home> {
       }
     }
 
-    bool setRefresh = false;
-
     return MaterialApp(
       theme: currentTheme,
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
           centerTitle: false,
-          title: const Text(
-            'TaskMate',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-            ),
+          elevation: 0,
+          backgroundColor: currentTheme.scaffoldBackgroundColor,
+          title: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    navigateToProfile(context, user.uid);
+                  },
+                  child: CircleAvatar(
+                    backgroundImage: NetworkImage(user!.photoUrl),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'TaskMate',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           actions: [
             // if user is not null, then show logout button else show login button
@@ -135,29 +163,55 @@ class _HomeState extends ConsumerState<Home> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        navigateToProfile(context, user.uid);
-                      },
-                      child: CircleAvatar(
-                        backgroundImage: NetworkImage(user.photoUrl),
-                      ),
-                    ),
-                  )
                 ],
               ),
-
-            if (user == null)
-              IconButton(
-                onPressed: () {
-                  ref
-                      .read(authControllerProvider.notifier)
-                      .signInWithGoogle(context);
-                },
-                icon: const Icon(Icons.login),
-              ),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Fluttertoast.showToast(
+                      msg: 'Chat coming soon!',
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: currentTheme.primaryColor,
+                      textColor: Colors.white,
+                      fontSize: 16.0,
+                    );
+                  },
+                  icon: Stack(
+                    children: [
+                      const Icon(Icons.chat),
+                      if (notificationCount > 0)
+                        Positioned(
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(1),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(6),
+                              ),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 12,
+                              minHeight: 12,
+                            ),
+                            child: Text(
+                              '$notificationCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         body: Constants.tabWidgets[_page],

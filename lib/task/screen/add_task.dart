@@ -121,6 +121,8 @@ class _AddTaskState extends ConsumerState<AddTask> {
 
     TextEditingController descriptionController = TextEditingController();
 
+    TextEditingController subTitleController = TextEditingController();
+
     String? errorText1 = "Please enter a task title";
 
     String? errorText2 = "Please enter a task Description";
@@ -201,7 +203,7 @@ class _AddTaskState extends ConsumerState<AddTask> {
                     ),
                   ),
                   Text(
-                    'Add Task to Session',
+                    'Add Project',
                     style: TextStyle(
                       fontFamily: 'MyFont',
                       fontSize: 7.0.widthPercent,
@@ -214,7 +216,11 @@ class _AddTaskState extends ConsumerState<AddTask> {
                   const SizedBox(height: 20),
                   titleWidget(titleController, errorText1),
                   const SizedBox(height: 20),
+                  subTitleWidget(subTitleController, errorText2),
+                  const SizedBox(height: 20),
                   CupertinoTextFormFieldRow(
+                    maxLength: 300,
+                    maxLines: null,
                     style: const TextStyle(color: Colors.white),
                     prefix: const Padding(
                       padding: EdgeInsets.all(8.0),
@@ -241,6 +247,7 @@ class _AddTaskState extends ConsumerState<AddTask> {
                       return null;
                     },
                     onChanged: (value) {
+                      descriptionController.text = value;
                       setState(() {
                         errorText2 = null;
                       });
@@ -262,7 +269,7 @@ class _AddTaskState extends ConsumerState<AddTask> {
                           controller: TextEditingController(
                             text: "$formattedDate",
                           ),
-                          placeholder: 'Select date',
+                          placeholder: 'Select due date',
                           padding: const EdgeInsets.all(12.0),
                           placeholderStyle: const TextStyle(
                             color: Colors.grey,
@@ -293,13 +300,15 @@ class _AddTaskState extends ConsumerState<AddTask> {
                   timerWidget(selectTime, context, selectedTime, errorText2),
                   const SizedBox(height: 20),
                   submitButton(
-                      _formKey,
-                      ref,
-                      titleController,
-                      descriptionController,
-                      formattedDate,
-                      selectedTime,
-                      context),
+                    _formKey,
+                    ref,
+                    titleController,
+                    descriptionController,
+                    subTitleController,
+                    formattedDate,
+                    selectedTime,
+                    context,
+                  ),
                 ],
               ),
             ),
@@ -338,6 +347,42 @@ class _AddTaskState extends ConsumerState<AddTask> {
       },
       onChanged: (value) {
         titleController.text = value;
+        setState(() {
+          errorText1 = null;
+        });
+      },
+    );
+  }
+
+  CupertinoTextFormFieldRow subTitleWidget(
+      TextEditingController subTitleController, String? errorText1) {
+    return CupertinoTextFormFieldRow(
+      style: const TextStyle(color: Colors.white),
+      prefix: const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Icon(Icons.subtitles, color: Colors.white),
+      ),
+      controller: subTitleController,
+      placeholder: 'Sub Task Title / Project Group',
+      padding: const EdgeInsets.all(12.0),
+      placeholderStyle: const TextStyle(
+        color: Colors.grey,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.grey,
+          width: 1.0,
+        ),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a sub-task title';
+        }
+        return null;
+      },
+      onChanged: (value) {
+        subTitleController.text = value;
         setState(() {
           errorText1 = null;
         });
@@ -394,6 +439,7 @@ class _AddTaskState extends ConsumerState<AddTask> {
       WidgetRef ref,
       TextEditingController titleController,
       TextEditingController descriptionController,
+      TextEditingController subtitleController,
       String? formattedDate,
       TimeOfDay selectedTime,
       BuildContext context) {
@@ -405,15 +451,10 @@ class _AddTaskState extends ConsumerState<AddTask> {
                 context: context,
                 title: titleController.text.trim(),
                 description: descriptionController.text.trim(),
+                subTitle: subtitleController.text.trim(),
                 date: formattedDate!,
                 time: selectedTime.format(context),
               );
-
-          // final sessionController =
-          //     ref.watch(sessionControllerProvider.notifier);
-
-          // Session? sessionDetails =
-          //     await sessionController.getSessionDetails(widget.sessionId);
 
           titleController.clear();
           descriptionController.clear();
