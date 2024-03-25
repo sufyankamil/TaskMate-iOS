@@ -51,5 +51,9 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To allow user to add a image from photo libray as an attachment</string>
+	<key>NSCameraUsageDescription</key>
+	<string>To allow user to take a photo and attach it to the task</string>
 </dict>
 </plist>

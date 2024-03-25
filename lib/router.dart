@@ -12,6 +12,7 @@ import 'task/screen/add_sub_task.dart';
 import 'task/screen/add_task.dart';
 import 'task/screen/completed_task.dart';
 import 'task/screen/detailed_task.dart';
+import 'task/screen/sub_task_detail_screen.dart';
 
 final loggedInRoute = RouteMap(
   routes: {
@@ -56,6 +57,22 @@ final loggedInRoute = RouteMap(
             sessionId: route.pathParameters['sessionId']!,
           ),
         ),
+    
+    '/sub-task-detail/:taskId': (route) {
+      final taskId = route.pathParameters['taskId']!;
+      final subTaskIds = (route.queryParameters['subTaskIds'] ?? '').split(',');
+      final selectedSubChoiceIndex = int.parse(
+          route.queryParameters['selectedSubChoiceIndex'] ??
+              '0'); // Default value is 0 if not provided
+      return MaterialPage(
+        child: SubTaskDetail(
+          taskId: taskId,
+          subTaskId: subTaskIds,
+          selectedSubChoiceIndex: selectedSubChoiceIndex,
+        ),
+      );
+    },
+
   },
 );
 

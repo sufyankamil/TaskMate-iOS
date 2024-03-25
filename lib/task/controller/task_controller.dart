@@ -38,6 +38,24 @@ final taskByIdProvider =
   return taskController.fetchTaskById(postId);
 });
 
+final subTaskByIdsProvider =
+    StreamProvider.family.autoDispose((ref, String taskId) {
+  final taskController = ref.watch(postControllerProvider.notifier);
+  return taskController.fetchSubTaskIds(taskId);
+});
+
+final fetchSubTaskByIdOnly =
+    StreamProvider.family.autoDispose((ref, String subTaskId) {
+  final taskController = ref.watch(postControllerProvider.notifier);
+  return taskController.fetchSubTaskByIdOnly(subTaskId);
+});
+
+// final fetchTodoByIdProvider = StreamProvider.family
+//     .autoDispose<Todo, String, String>((ref, taskId, subTaskId) {
+//   final taskController = ref.watch(postControllerProvider.notifier);
+//   return taskController.fetchSubTaskById(taskId, subTaskId);
+// });
+
 final taskControllerProvider =
     StateNotifierProvider.autoDispose<TaskController, bool>((ref) {
   final taskRepository = ref.watch(taskRepositoryProvider);
@@ -216,6 +234,26 @@ class TaskController extends StateNotifier<bool> {
     return _taskRepository.fetchTaskById(taskId);
   }
 
+  Stream<Todo> fetchSubTaskById(String taskId, String subTaskId) {
+    return _taskRepository.fetchSubTaskById(taskId, subTaskId);
+  }
+
+  Stream<Todo> fetchSubTaskByIdOnly(String subTaskId) {
+    try {
+      return _taskRepository.fetchSubTaskByIdOnly(subTaskId);
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Stream<List<String>> fetchSubTaskIds(String taskId) {
+    try {
+      return _taskRepository.fetchSubTaskIds(taskId);
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
   Future<Either<Failure, void>> updateTasksWithSubTask(
     Tasks tasks,
     String subTaskTitle,
@@ -230,6 +268,10 @@ class TaskController extends StateNotifier<bool> {
         isPending: true,
         inProgress: false,
         isDone: false,
+        assignedBy: '',
+        assignedTo: '',
+        attachments: [],
+        comments: '',
       );
 
       // Add the new subtask to the existing todos list

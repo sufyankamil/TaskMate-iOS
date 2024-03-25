@@ -7,7 +7,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:routemaster/routemaster.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/firebase_options.dart';
 
 import 'auth/controller/auth_controller.dart';
@@ -52,39 +51,10 @@ class MyApp extends ConsumerStatefulWidget {
 class _MyAppState extends ConsumerState<MyApp> {
   UserModel? user;
 
-  late ThemeData _themeData;
 
   @override
   void initState() {
     super.initState();
-    _loadTheme();
-  }
-
-  void _loadTheme() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String themeMode = prefs.getString('theme_mode') ?? 'light';
-    setState(() {
-      _themeData = _getThemeData(themeMode);
-    });
-  }
-
-  ThemeData _getThemeData(String themeMode) {
-    switch (themeMode) {
-      case 'light':
-        return ThemeData.light();
-      case 'dark':
-        return ThemeData.dark();
-      default:
-        return ThemeData.from(colorScheme: const ColorScheme.light());
-    }
-  }
-
-  void _setTheme(String mode) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('theme_mode', mode);
-    setState(() {
-      _themeData = _getThemeData(mode);
-    });
   }
 
   void getData(WidgetRef ref, User data) async {

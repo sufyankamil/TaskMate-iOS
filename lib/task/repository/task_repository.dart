@@ -88,6 +88,77 @@ class TaskRepository {
     }
   }
 
+    Stream<List<String>> fetchSubTaskIds(String taskId) {
+    try {
+      return _task.doc(taskId).snapshots().map<List<String>>((snapshot) {
+        var todoList =
+            (snapshot.data() as Map<String, dynamic>)['todos'] as List<dynamic>;
+        // Extract subtask IDs from the todo list
+        var subTaskIds = todoList.map((todo) => todo['id'] as String).toList();
+        return subTaskIds;
+      });
+    } on FirebaseException catch (e) {
+      throw e.message!;
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+Stream<Todo> fetchSubTaskById(String taskId, String subTaskId) {
+    try {
+      return _task.doc(taskId).snapshots().map((snapshot) {
+        var todoList =
+            (snapshot.data() as Map<String, dynamic>)['todo'] as List<dynamic>;
+        // Find the todo containing the subtask with subTaskId
+        var todoContainingSubTask = todoList.firstWhere(
+          (todo) => todo['id'] == subTaskId,
+          orElse: () => null,
+        );
+        if (todoContainingSubTask != null) {
+          return Todo.fromMap(todoContainingSubTask);
+        } else {
+          throw Exception(
+              "Subtask with ID $subTaskId not found in task with ID $taskId");
+        }
+      });
+    } on FirebaseException catch (e) {
+      throw e.message!;
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Stream<Todo> fetchSubTaskByIdOnly(String subTaskId) {
+    try {
+      return _task.snapshots().map((snapshot) {
+        
+            var todoList =
+              (snapshot.docs.first.data() as Map<String, dynamic>)['todos'] as List<dynamic>;
+        // Find the todo containing the subtask with subTaskId
+        var todoContainingSubTask = todoList.firstWhere(
+          (todo) => todo['id'] == subTaskId,
+          orElse: () => null,
+        );
+        if (todoContainingSubTask != null) {
+          return Todo.fromMap(todoContainingSubTask);
+        } else {
+          throw Exception("Subtask with ID $subTaskId not found");
+        }
+      });
+    } on FirebaseException catch (e) {
+      throw e.message!;
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+
+
+
+
+
+
+
   Future<void> updateTasksWithSubTask(Tasks tasks, String subTaskTitle) async {
     try {
       // Update the document in Firestore
@@ -216,4 +287,5 @@ class TaskRepository {
 
   CollectionReference get _task =>
       _firestore.collection(Constants.tasksCollection);
+
 }

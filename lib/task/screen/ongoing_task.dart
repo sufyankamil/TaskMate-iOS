@@ -15,16 +15,31 @@ import '../controller/task_controller.dart';
 class OnGoingTask extends ConsumerStatefulWidget {
   final String taskId;
 
+  final List<String> subTaskIds;
+
   final int selectedChoiceIndex;
 
-  const OnGoingTask(
-      {super.key, required this.taskId, required this.selectedChoiceIndex});
+  const OnGoingTask({
+    super.key,
+    required this.taskId,
+    required this.selectedChoiceIndex,
+    required this.subTaskIds,
+  });
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _OnGoingTaskState();
 }
 
 class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
+  void navigateToSubTaskDetail(BuildContext context, String taskId,
+      List<String> subTaskIds, int selectedSubChoiceIndex) {
+    final subTaskIdsQueryParam = subTaskIds.join(',');
+    Routemaster.of(context).push(
+        '/sub-task-detail/$taskId?subTaskIds=$subTaskIdsQueryParam&selectedSubChoiceIndex=$selectedSubChoiceIndex');
+  }
+
+  int selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(child: _buildTaskList(ref));
@@ -86,13 +101,9 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
   }
 
   Widget _buildTaskHeader(WidgetRef ref, Tasks task) {
-    int todosLength = 0;
-
     List<String> todoTitles = [];
 
     List<String> todosDescription = [];
-
-    var todoIsDoneStatus = <bool>[];
 
     final taskController = ref.watch(taskControllerProvider.notifier);
 
@@ -104,7 +115,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       Tasks tasks = task.value;
 
       // Get the length of the todos list
-      todosLength = tasks.todos.length;
 
       // Get the titles of todos
       todoTitles = tasks.todos.map((todo) => todo.title).toList();
@@ -112,13 +122,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       todosDescription = tasks.todos.map((todo) => todo.description).toList();
 
       // Get the todos isDone sttaus
-      todoIsDoneStatus = tasks.todos.map((todo) => todo.isDone).toList();
-    }
-
-    Key uniqueKey = const Key('unique_slidable_key_0');
-
-    void navigateToCompletedTask(BuildContext context, String taskId) {
-      Routemaster.of(context).push('/completed-task/$taskId');
     }
 
     void doNothing(BuildContext context) {
@@ -140,30 +143,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
     }
 
     if (todoTitles.isNotEmpty) {
-      //   return Card(
-      //     elevation: 4.0,
-      //     margin: const EdgeInsets.all(8.0),
-      //     child: Padding(
-      //       padding: const EdgeInsets.all(16.0),
-      //       child: Column(
-      //         crossAxisAlignment: CrossAxisAlignment.start,
-      //         children: [
-      //           Row(
-      //             children: [
-      //               _inProgressIndicator(todosLength),
-      //               const Spacer(),
-      //               _completedTaskButton(navigateToCompletedTask, taskController),
-      //             ],
-      //           ),
-      //           const SizedBox(height: 10),
-      //           _taskList(todoTitles, task, taskController, doNothing),
-      //         ],
-      //       ),
-      //     ),
-      //   );
-      // }
-      // return emptyTask();
-
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
@@ -181,88 +160,6 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       );
     }
     return emptyTask();
-  }
-
-  Widget _inProgressIndicator(int todosLength) {
-    return Row(
-      children: [
-        Icon(Icons.work_outline, color: Theme.of(context).primaryColor),
-        const SizedBox(width: 8.0),
-        Text(
-          'In Progress ($todosLength)',
-          style: Theme.of(context).textTheme.subtitle1?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _completedTaskButton(
-      Function(BuildContext, String) navigateToCompletedTask,
-      TaskController taskController) {
-    return OutlinedButton.icon(
-      icon: Icon(Icons.check_circle_outline,
-          color: Theme.of(context).primaryColor),
-      label: const Text(Constants.completedTask),
-      onPressed: () {
-        navigateToCompletedTask(context, widget.taskId);
-        taskController.changeChipIndex(1);
-      },
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: Theme.of(context).primaryColor),
-      ),
-    );
-  }
-
-  Widget _taskList(
-      List<String> todoTitles,
-      AsyncValue<Tasks> task,
-      TaskController taskController,
-      void Function(BuildContext context) doNothing) {
-    // Remove the Expanded widget here as its parent will handle the sizing.
-    return ListView.separated(
-      shrinkWrap: true, // Add shrinkWrap
-      physics:
-          const NeverScrollableScrollPhysics(), // Add this to prevent the ListView from scrolling independently
-      itemCount: todoTitles.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: Theme.of(context).dividerColor),
-      itemBuilder: (context, index) {
-        return _taskListItem(
-            index, todoTitles, task, taskController, doNothing);
-      },
-    );
-  }
-
-  Widget _taskListItem(
-      int index,
-      List<String> todoTitles,
-      AsyncValue<Tasks> task,
-      TaskController taskController,
-      void Function(BuildContext context) doNothing) {
-    Tasks? tasks = task.value;
-    List<Todo> todos = tasks?.todos ?? [];
-    return Slidable(
-      key: Key('slidable_task_item_$index'),
-      child: ListTile(
-        leading: Text(
-          '${index + 1}.',
-          style: TextStyle(
-            fontSize: 16.0,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        title: Text(todoTitles[index]),
-        trailing: IconButton(
-          icon: Icon(todos[index].isDone
-              ? Icons.check_circle
-              : Icons.radio_button_unchecked),
-          onPressed: () {},
-        ),
-      ),
-    );
   }
 
   Padding divider() {
@@ -323,6 +220,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
       List<String> todosDescription,
       AsyncValue<Tasks> task,
       TaskController taskController,
+      // int selectedChoiceIndex,
       void Function(BuildContext context) doNothing) {
     return Expanded(
       child: ListView.builder(
@@ -508,7 +406,7 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
     );
   }
 
-  Padding listOfSubTask(
+  GestureDetector listOfSubTask(
     List<String> todoTitles,
     List<String> todosDescription,
     int index,
@@ -518,142 +416,125 @@ class _OnGoingTaskState extends ConsumerState<OnGoingTask> {
   ) {
     Todo todo = todos[index];
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        height: 35.0.widthPercent,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: const Color(0xFF252E41)),
-        child: Padding(
-          padding: const EdgeInsets.only(
-            left: 8.0,
-            right: 8.0,
-            top: 8.0,
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      title: Text(todoTitles[index]),
-                      subtitle: Text(todosDescription[index], maxLines: 1),
-                      titleTextStyle: const TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+        navigateToSubTaskDetail(
+          context,
+          widget.taskId,
+          widget.subTaskIds,
+          selectedIndex,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          height: 35.0.widthPercent,
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF252E41)),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 8.0,
+              right: 8.0,
+              top: 8.0,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        title: Text(todoTitles[index]),
+                        subtitle: Text(todosDescription[index], maxLines: 1),
+                        titleTextStyle: const TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        subtitleTextStyle: const TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey,
+                        ),
                       ),
-                      subtitleTextStyle: const TextStyle(
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 3.0),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.attach_file,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            '4',
-                            style: TextStyle(
-                              fontSize: 14.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[400],
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 3.0),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.attach_file,
+                              color: Colors.white,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.chat,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            '2',
-                            style: TextStyle(
-                              fontSize: 14.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          SizedBox(width: 40.0.widthPercent),
-                          ElevatedButton(
-                            onPressed: todo.isDone
-                                ? null
-                                : () {
-                                    showCupertinoModal(
-                                      context,
-                                      todos,
-                                      todoTitles,
-                                      todosDescription,
-                                      taskController,
-                                      tasks,
-                                      index,
-                                    );
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            child: Text(
-                              todo.isDone ? "Complete" : "Move",
+                            const SizedBox(width: 5),
+                            Text(
+                              '4',
                               style: TextStyle(
-                                fontSize: 10.0.textPercentage,
-                                color: Colors.white,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[400],
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true,
                             ),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              )
-            ],
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.chat,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '2',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                            SizedBox(width: 40.0.widthPercent),
+                            ElevatedButton(
+                              onPressed: todo.isDone
+                                  ? null
+                                  : () {
+                                      showCupertinoModal(
+                                        context,
+                                        todos,
+                                        todoTitles,
+                                        todosDescription,
+                                        taskController,
+                                        tasks,
+                                        index,
+                                      );
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                              ),
+                              child: Text(
+                                todo.isDone ? "Complete" : "Move",
+                                style: TextStyle(
+                                  fontSize: 10.0.textPercentage,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
     );
-
-    // return Container(
-    //   decoration: BoxDecoration(
-    //     borderRadius: BorderRadius.circular(10),
-    //   ),
-    //   child: Padding(
-    //     padding: const EdgeInsets.only(
-    //       left: 8.0,
-    //       right: 8.0,
-    //       top: 8.0,
-    //     ),
-    //     child: Row(
-    //       children: [
-    //         Text(
-    //           '${todoTitles.indexOf(todoTitles[index]) + 1}.',
-    //           style: TextStyle(
-    //             fontSize: 12.0.textPercentage,
-    //             fontWeight: FontWeight.bold,
-    //             color: Colors.grey,
-    //           ),
-    //         ),
-    //         Expanded(
-    //           child: ListTile(
-    //             title: Text(todoTitles[index]),
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //   ),
-    // );
   }
 }

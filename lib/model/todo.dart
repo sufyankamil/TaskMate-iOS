@@ -1,3 +1,5 @@
+import 'attachments.dart';
+
 class Todo {
   final String id;
   final String title;
@@ -5,6 +7,10 @@ class Todo {
   bool isPending;
   bool inProgress;
   bool isDone;
+  final String? assignedBy;
+  final String? assignedTo;
+  final List<Attachment>? attachments;
+  final String? comments;
 
   Todo({
     required this.id,
@@ -13,6 +19,11 @@ class Todo {
     required this.isPending,
     required this.inProgress,
     required this.isDone,
+    
+    this.assignedBy,
+    this.assignedTo,
+    this.attachments,
+    this.comments,
   });
 
   Todo copyWith({
@@ -22,6 +33,10 @@ class Todo {
     bool? isPending,
     bool? inProgress,
     bool? isDone,
+    String? assignedBy,
+    String? assignedTo,
+    List<Attachment>? attachments,
+    String? comments,
   }) {
     return Todo(
       id: id ?? this.id,
@@ -30,6 +45,10 @@ class Todo {
       isPending: isPending ?? this.isPending,
       inProgress: inProgress ?? this.inProgress,
       isDone: isDone ?? this.isDone,
+      assignedBy: assignedBy ?? this.assignedBy,
+      assignedTo: assignedTo ?? this.assignedTo,
+      attachments: attachments ?? this.attachments,
+      comments: comments ?? this.comments,
     );
   }
 
@@ -41,6 +60,11 @@ class Todo {
       'isPending': isPending,
       'inProgress': inProgress,
       'isDone': isDone,
+      'assignedBy': assignedBy,
+      'assignedTo': assignedTo,
+      'attachments':
+          attachments?.map((attachment) => attachment.toMap()).toList(),
+      'comments': comments,
     };
   }
 
@@ -52,6 +76,11 @@ class Todo {
       isPending: map['isPending'],
       inProgress: map['inProgress'],
       isDone: map['isDone'],
+      assignedBy: map['assignedBy'],
+      assignedTo: map['assignedTo'],
+      attachments: List<Attachment>.from(
+          map['attachments']?.map((x) => Attachment.fromMap(x))),
+      comments: map['comments'],
     );
   }
 

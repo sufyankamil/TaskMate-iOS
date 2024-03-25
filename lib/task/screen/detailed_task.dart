@@ -34,6 +34,10 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
 
     List<String> tasks = [];
 
+    final subTaskIds = ref
+        .watch(taskControllerProvider.notifier)
+        .fetchSubTaskIds(widget.taskId);
+
     int taskCompleted(Tasks task) {
       int doneTodo = 0;
       for (var todo in task.todos) {
@@ -70,10 +74,6 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
         }
       }
       return doneTodo;
-    }
-
-    void navigateToSubTask(BuildContext context, String taskId) {
-      Routemaster.of(context).push('/sub-task/$taskId');
     }
 
     final usersTask = ref.watch(userTaskProvider);
@@ -214,8 +214,6 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                               ),
                               const SizedBox(height: 16.0),
                               project(stringToColor),
-                              // const SizedBox(height: 16.0),
-                              // choices(stringToColor, data),
                             ],
                           ),
                         ),
@@ -228,9 +226,27 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                       ),
                     ),
                 choices(stringToColor),
-                OnGoingTask(
-                  taskId: widget.taskId,
-                  selectedChoiceIndex: selectedIndex,
+                StreamBuilder<List<String>>(
+                  stream: subTaskIds,
+                  builder: (context, snapshot) {
+                    final subTaskIds = snapshot.data;
+
+                    if (snapshot.connectionState == ConnectionState.active) {
+                      return OnGoingTask(
+                        taskId: widget.taskId,
+                        selectedChoiceIndex: selectedIndex,
+                        subTaskIds: subTaskIds!,
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return OnGoingTask(
+                        taskId: widget.taskId,
+                        selectedChoiceIndex: selectedIndex,
+                        subTaskIds: subTaskIds ?? [],
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -257,7 +273,7 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
   }
 
   void addSubTask(BuildContext context, WidgetRef ref) {
-    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     TextEditingController titleController = TextEditingController();
 
@@ -286,7 +302,7 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
           return CupertinoPopupSurface(
             child: Material(
               child: Form(
-                key: _formKey,
+                key: formKey,
                 child: Container(
                   color: Colors.transparent,
                   width: double.infinity,
@@ -375,8 +391,8 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
+                          if (formKey.currentState!.validate()) {
+                            formKey.currentState!.save();
                             if (taskDetails is AsyncData<Tasks>) {
                               // Access the value inside AsyncData
                               Tasks tasks = taskDetails.value;
@@ -623,7 +639,6 @@ class _DetailedPageState extends ConsumerState<DetailedPage> {
                 onSelected: (bool selected) {
                   setState(() {
                     selectedIndex = selected ? index : selectedIndex;
-                    print('Selected Index: $selectedIndex');
                   });
                 },
               );

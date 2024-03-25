@@ -71,7 +71,6 @@ class _AddTaskState extends ConsumerState<AddTask> {
               margin: const EdgeInsets.all(4.0),
               child: InkWell(
                 onTap: () async {
-                  // await showAddTaskDialog(context);
                   addTask(context, ref);
                 },
                 child: DottedBorder(
@@ -137,7 +136,7 @@ class _AddTaskState extends ConsumerState<AddTask> {
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: selectedDate,
-        firstDate: DateTime(2000),
+        firstDate: DateTime.now(),
         lastDate: DateTime(2101),
       );
 
@@ -257,41 +256,51 @@ class _AddTaskState extends ConsumerState<AddTask> {
                   Row(
                     children: [
                       Expanded(
-                        child: CupertinoTextFormFieldRow(
-                          style: const TextStyle(color: Colors.white),
-                          prefix: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: GestureDetector(
-                                onTap: () => selectDate(context),
-                                child: const Icon(Icons.date_range,
-                                    color: Colors.white)),
-                          ),
-                          controller: TextEditingController(
-                            text: "$formattedDate",
-                          ),
-                          placeholder: 'Select due date',
-                          padding: const EdgeInsets.all(12.0),
-                          placeholderStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.grey,
-                              width: 1.0,
+                        child: Stack(
+                          children: [
+                            CupertinoTextFormFieldRow(
+                              style: const TextStyle(color: Colors.white),
+                              prefix: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: GestureDetector(
+                                    onTap: () => selectDate(context),
+                                    child: const Icon(Icons.date_range,
+                                        color: Colors.white)),
+                              ),
+                              controller: TextEditingController(
+                                text: "$formattedDate",
+                              ),
+                              placeholder: 'Select due date',
+                              padding: const EdgeInsets.all(12.0),
+                              placeholderStyle: const TextStyle(
+                                color: Colors.grey,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey,
+                                  width: 1.0,
+                                ),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a valid date';
+                                }
+                                return null;
+                              },
+                              onChanged: (value) {
+                                setState(() {
+                                  errorText2 = null;
+                                });
+                              },
                             ),
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a valid date';
-                            }
-                            return null;
-                          },
-                          onChanged: (value) {
-                            setState(() {
-                              errorText2 = null;
-                            });
-                          },
+                            Positioned.fill(
+                              child: GestureDetector(
+                                onTap: () => selectDate(context),
+                                behavior: HitTestBehavior.translucent,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -395,39 +404,49 @@ class _AddTaskState extends ConsumerState<AddTask> {
     return Row(
       children: [
         Expanded(
-          child: CupertinoTextFormFieldRow(
-            prefix: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                    onTap: () => selectTime(context),
-                    child: const Icon(Icons.timer, color: Colors.white))),
-            style: const TextStyle(color: Colors.white),
-            controller: TextEditingController(
-              text: selectedTime.format(context),
-            ),
-            placeholder: 'Select time',
-            padding: const EdgeInsets.all(12.0),
-            placeholderStyle: const TextStyle(
-              color: Colors.grey,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.grey,
-                width: 1.0,
+          child: Stack(
+            children: [
+              CupertinoTextFormFieldRow(
+                prefix: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                        onTap: () => selectTime(context),
+                        child: const Icon(Icons.timer, color: Colors.white))),
+                style: const TextStyle(color: Colors.white),
+                controller: TextEditingController(
+                  text: selectedTime.format(context),
+                ),
+                placeholder: 'Select time',
+                padding: const EdgeInsets.all(12.0),
+                placeholderStyle: const TextStyle(
+                  color: Colors.grey,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey,
+                    width: 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select time';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    errorText2 = null;
+                  });
+                },
               ),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select time';
-              }
-              return null;
-            },
-            onChanged: (value) {
-              setState(() {
-                errorText2 = null;
-              });
-            },
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => selectTime(context),
+                  behavior: HitTestBehavior.translucent,
+                ),
+              ),
+            ],
           ),
         ),
       ],

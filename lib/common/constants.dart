@@ -154,4 +154,11 @@ class Constants {
   static const String taskPeopleInvolved = '12 People';
   static const String project = 'Project';
 
+  // Constants for sub task detail screen
+  static const String subTaskDetail = 'Detail Task';
+  static const String subTaskStatus = 'Status';
+  static const String attachments = 'Attachments';
+  static const String comments = 'Comment';
+  static const String addComment = 'Add Comment here';
+  static const String send = 'Comment';
 }

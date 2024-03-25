@@ -55,6 +55,8 @@ dependencies:
   zego_uikit_prebuilt_video_conference: ^2.7.0
   flutter_dotenv: ^5.1.0
   carousel_slider: ^4.2.1
+  image_picker: ^1.0.7
+  file_picker: ^6.2.1
 
 dev_dependencies:
   flutter_test:
